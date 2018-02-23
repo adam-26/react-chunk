@@ -1,190 +1,167 @@
-![React Loadable](http://thejameskyle.com/img/react-loadable-header.png)
+# react-chunk
+
+_Code splitting with minimal boiler plate_
 
 > A higher order component for loading components with dynamic imports.
+
+
+_This is a fork of [react-loadable](https://github.com/jamiebuilds/react-loadable), differences and new features include:_
+ * _A modified API to support new features_
+ * _Improved re-use of import components_
+ * _Improved support for route code splitting_
+ * _Preloading all chunks required to render an entire route_
+ * _Option to _hoist_ static methods of imported components_
+ * _Option to enable retry support with backoff_
+ * _Manually invoking a retry after timeout or error_
+ * _Support for [react-router-config](https://github.com/ReactTraining/react-router/tree/master/packages/react-router-config) code splitting_
+
+> This enables **both** _component_ and _route_ code splitting
 
 ## Install
 
 ```sh
-yarn add react-loadable
+npm install --save react-chunk
+```
+
+```sh
+yarn add react-chunk
 ```
 
 ## Example
 
-```js
-import Loadable from 'react-loadable';
-import Loading from './my-loading-component';
+For more detailed examples, [take a look at the examples](https://github.com/adam-26/react-chunk/tree/master/example)
 
-const LoadableComponent = Loadable({
-  loader: () => import('./my-component'),
-  loading: Loading,
-});
+### Single Import
+
+```js
+import { chunk } from 'react-chunk';
+
+// It can be this easy!
+const MyComponentChunk = chunk(() => import('./my-component'))();
 
 export default class App extends React.Component {
   render() {
-    return <LoadableComponent/>;
+    return <MyComponentChunk />;
   }
 }
 ```
 
-## Happy Customers:
+### Multiple Imports
+```js
+import { chunks } from 'react-chunk';
 
-- ["I'm obsessed with this right now: CRA with React Router v4 and react-loadable. Free code splitting, this is so easy."](https://twitter.com/matzatorski/status/872059865350406144)
-- ["Webpack 2 upgrade & react-loadable; initial load from 1.1mb to 529kb in under 2 hours. Immense."](https://twitter.com/jwbradley87/status/847191118269833216)
-- ["Oh hey - using loadable component I knocked 13K off my initial load. Easy win!"](https://twitter.com/AdamRackis/status/846593080992153600)
-- ["Had a look and its awesome. shaved like 50kb off our main bundle."](https://github.com/quran/quran.com-frontend/pull/701#issuecomment-287908551)
-- ["I've got that server-side rendering + code splitting + PWA ServiceWorker caching setup done 😎 (thanks to react-loadable). Now our frontend is super fast."](https://twitter.com/mxstbr/status/922375575217627136)
-- ["Using react-loadable went from 221.28 KB → 115.76 KB @ main bundle. Fucking awesome and very simple API."](https://twitter.com/evgenyrodionov/status/958821614644269057)
+// A component for rendering mutilple imports
+function MutilImportRenderer(props) {
+  const {
+    chunk: {
+      isLoaded,
+      imported: {
+        MyComponent,
+        MyOtherComponent
+      }
+    },
+    ...restProps
+  }) = props;
 
-## Users
+  if (isLoaded) {
+    return (
+      <div>
+        <MyComponent {...restProps} />
+        <MyOtherComponent {...restProps} />
+      </div>
+    );
+  }
 
-- [Atlassian](https://www.atlassian.com/)
-- [Cloudflare](https://www.cloudflare.com)
-- [Curio](https://www.curio.org)
-- [Flyhomes](https://flyhomes.com)
-- [MediaTek MCS-Lite](https://github.com/MCS-Lite)
-- [Snipit](https://snipit.io)
-- [Spectrum.chat](https://spectrum.chat)
-- [Talentpair](https://talentpair.com)
-- [Tinder](https://tinder.com/)
-- [Unsplash](https://unsplash.com/)
+  return <div>Loading...</div>;
+}
 
-> _If your company or project is using React Loadable, please open a PR and add
-> yourself to this list (in alphabetical order please)_
+const MyComponentsChunk = chunks({
+  MyComponent: () => import('./my-component'),
+  MyOtherComponent: () => import('./my-other-component'),
+})(MutilImportRenderer);
 
-## Also See:
+export default class App extends React.Component {
+  render() {
+    return <MyComponentsChunk />;
+  }
+}
+```
 
-- [`react-loadable-visibility`](https://github.com/stratiformltd/react-loadable-visibility) - Building on top of and keeping the same API as `react-loadable`, this library enables you to load content that is visible on the screen.
+## Environment Configuration
 
-<h2>
-  <hr>
-  <hr>
-  <img src="http://thejameskyle.com/img/react-loadable-guide.png" alt="GUIDE">
-  <hr>
-  <hr>
-  <small>Guide</small>
-</h2>
+It's _recommended_ you configure your development environment with the following plugins.
 
-So you've got your React app, you're bundling it with Webpack, and things are
-going smooth. But then one day you notice your app's bundle is getting so big
-that it's slowing things down.
+### Client
 
-It's time to start code-splitting your app!
+Configure your client build.
 
-![A single giant bundle vs multiple smaller bundles](http://thejameskyle.com/img/react-loadable-split-bundles.png)
+#### Babel
 
-Code-splitting is the process of taking one large bundle containing your entire
-app, and splitting them up into multiple smaller bundles which contain separate
-parts of your app.
+Add these plugins to your babel configuration.
 
-This might seem difficult to do, but tools like Webpack have this built in, and
-React Loadable is designed to make it super simple.
+```sh
+npm install --save-dev babel-plugin-syntax-dynamic-import
+```
 
-### Route-based splitting vs. Component-based splitting
+The **order** of plugins is important.
 
-A common piece of advice you will see is to break your app into separate routes
-and load each one asynchronously. This seems to work well enough for many apps–
-as a user, clicking a link and waiting for a page to load is a familiar
-experience on the web.
+`.babelrc`
+```json
+{
+  "presets": {...},
+  "plugins": [
+    "react-chunk/babel",
+    "syntax-dynamic-import"
+  ]
+}
 
-But we can do better than that.
+```
 
-Using most routing tools for React, a route is simply a component. There's
-nothing particularly special about them (Sorry Ryan and Michael– you're what's
-special). So what if we optimized for splitting around components instead of
-routes? What would that get us?
+#### Webpack
 
-![Route vs. component centric code splitting](http://thejameskyle.com/img/react-loadable-component-splitting.png)
+The webpack plugin will write the chunk module data to a file required for server-side rendering.
 
-As it turns out: Quite a lot. There are many more places than just routes where
-you can pretty easily split apart your app. Modals, tabs, and many more UI
-components hide content until the user has done something to reveal it.
-
-> **Example:** Maybe your app has a map buried inside of a tab component. Why
-> would you load a massive mapping library for the parent route every time when
-> the user may never go to that tab?
-
-Not to mention all the places where you can defer loading content until higher
-priority content is finished loading. That component at the bottom of your page
-which loads a bunch of libraries: Why should that be loaded at the same time as
-the content at the top?
-
-And because routes are just components, we can still easily code-split at the
-route level.
-
-Introducing new code-splitting points in your app should be so easy that you
-don't think twice about it. It should be a matter of changing a few lines of
-code and everything else should be automated.
-
-### Introducing React Loadable
-
-React Loadable is a small library that makes component-centric code splitting
-incredibly easy in React.
-
-`Loadable` is a higher-order component (a function that creates a component)
-which lets you dynamically load any module before rendering it into your app.
-
-Let's imagine two components, one that imports and renders another.
+Add the plugin to your _client_ webpack plugins
 
 ```js
-import Bar from './components/Bar';
+import { ReactChunkPlugin } from 'react-chunk/webpack';
 
-class Foo extends React.Component {
-  render() {
-    return <Bar/>;
-  }
-}
+plugins: [
+  new ReactChunkPlugin({
+    filename: path.join(__dirname, 'dist', 'react-chunk.json')
+  })
+]
+
 ```
 
-Right now we're depending on `Bar` being imported synchronously via `import`,
-but we don't need it until we go to render it. So why don't we just defer that?
+### Server
 
-Using a **dynamic import** ([a tc39 proposal currently at Stage 3](https://github.com/tc39/proposal-dynamic-import))
-we can modify our component to load `Bar` asynchronously.
+If your application performs SSR, configure your server build.
 
-```js
-class MyComponent extends React.Component {
-  state = {
-    Bar: null
-  };
+#### Babel
 
-  componentWillMount() {
-    import('./components/Bar').then(Bar => {
-      this.setState({ Bar });
-    });
-  }
+Add these plugins to your babel configuration.
 
-  render() {
-    let {Bar} = this.state;
-    if (!Bar) {
-      return <div>Loading...</div>;
-    } else {
-      return <Bar/>;
-    };
-  }
-}
+```sh
+npm install --save-dev babel-plugin-dynamic-import-node
 ```
 
-But that's a whole bunch of work, and it doesn't even handle a bunch of cases.
-What about when `import()` fails? What about server-side rendering?
+The **order** of plugins is important.
 
-Instead you can use `Loadable` to abstract away the problem.
-
-```js
-import Loadable from 'react-loadable';
-
-const LoadableBar = Loadable({
-  loader: () => import('./components/Bar'),
-  loading() {
-    return <div>Loading...</div>
-  }
-});
-
-class MyComponent extends React.Component {
-  render() {
-    return <LoadableBar/>;
-  }
+`.babelrc`
+```json
+{
+  "presets": {...},
+  "plugins": [
+    "react-chunk/babel",
+    "dynamic-import-node"
+  ]
 }
+
 ```
+
+## Introduction
+
 
 ### Automatic code-splitting on `import()`
 
@@ -193,77 +170,100 @@ When you use `import()` with Webpack 2+, it will
 you with no additional configuration.
 
 This means that you can easily experiment with new code splitting points just
-by switching to `import()` and using React Loadable. Figure out what performs
+by switching to `import()` and using React Chunk. Figure out what performs
 best for your app.
 
-### Creating a great "Loading..." Component
+
+### Naming webpack chunks
+
+Its often useful to assign _names_ to webpack chunks. This can be achieved easily using inline code comments.
+
+```js
+import { chunk, chunks } from 'react-chunk';
+
+const AppChunk =
+  chunk(() => import(/* webpackChunkName: "App" */ './app'))();
+
+const TimeChunk =
+  chunks({
+    Calendar: () => import(/* webpackChunkName: "calendar" */ './calendar'),
+    Clock: () => import(/* webpackChunkName: "clock" */ './clock'),
+  })(TimeRenderer);
+
+```
+
+### Rendering using chunk props
 
 Rendering a static "Loading..." doesn't communicate enough to the user. You
-also need to think about error states, timeouts, and making it a nice
-experience.
+also need to think about error states, timeouts, retries, and making it a nice user experience.
+
+As a developer, you can easiliy re-use import rendering logic when importing a single component. Renderering components for multiple components don't require much more effort.
 
 ```js
-function Loading() {
-  return <div>Loading...</div>;
-}
+function ChunkRenderer(props) {
+  const {
+    chunk: {
+      isLoading,
+      hasLoaded,
+      pastDelay,
+      timedOut,
+      error,
+      retry,
+      loaded,
+      Imported
+    },
+    ...restProps
+  } = prop;
 
-Loadable({
-  loader: () => import('./WillFailToLoad'), // oh no!
-  loading: Loading,
-});
-```
+  if (hasLoaded) {
+    return <Imported {...restProps } />;
+  }
 
-To make this all nice, your [loading component](#loadingcomponent) receives a
-couple different props.
+  if (error) {
+    return <div>An error occured</div>;
+  }
 
-#### Loading error states
+  if (timedOut) {
+    return (
+      <div>
+        This is taking a while..
+        <a onClick={() => retry()}>retry?</a>
+      </div>
+    );
+  }
 
-When your [`loader`](optsloader) fails, your [loading component](#loadingcomponent)
-will receive an [`error`](propserror) prop which will be `true` (otherwise it
-will be `false`).
-
-```js
-function Loading(props) {
-  if (props.error) {
-    return <div>Error!</div>;
-  } else {
+  if (isLoading && pastDelay) {
     return <div>Loading...</div>;
   }
+
+  return null;
 }
+
+chunk(() => import('./someComponent'))(ChunkRenderer);
 ```
+
+To make this all nice, your [chunk component](#loadingcomponent) receives a
+couple different props.
+
 
 #### Avoiding _Flash Of Loading Component_
 
-Sometimes components load really quickly (<200ms) and the loading screen only
+Sometimes components load really quickly (< 200ms) and the loading screen only
 quickly flashes on the screen.
 
 A number of user studies have proven that this causes users to perceive things
 taking longer than they really have. If you don't show anything, users perceive
 it as being faster.
 
-So your loading component will also get a [`pastDelay` prop](#propspastdelay)
+So your rendering component will also get a [`pastDelay` prop](#propspastdelay)
 which will only be true once the component has taken longer to load than a set
 [delay](#optsdelay).
 
-```js
-function Loading(props) {
-  if (props.error) {
-    return <div>Error!</div>;
-  } else if (props.pastDelay) {
-    return <div>Loading...</div>;
-  } else {
-    return null;
-  }
-}
-```
-
 This delay defaults to `200ms` but you can also customize the
-[delay](#optsdelay) in `Loadable`.
+[delay](#optsdelay) in `chunk` and `chunks`.
 
 ```js
-Loadable({
-  loader: () => import('./components/Bar'),
-  loading: Loading,
+chunk(() => import('./components/Bar'), {
   delay: 300, // 0.3 seconds
 });
 ```
@@ -274,148 +274,77 @@ Sometimes network connections suck and never resolve or fail, they just hang
 there forever. This sucks for the user because they won't know if it should
 always take this long, or if they should try refreshing.
 
-The [loading component](#loadingcomponent) will receive a
+The rendering component will receive a
 [`timedOut` prop](#propstimedout) which will be set to `true` when the
 [`loader`](#optsloader) has timed out.
 
-```js
-function Loading(props) {
-  if (props.error) {
-    return <div>Error!</div>;
-  } else if (props.timedOut) {
-    return <div>Taking a long time...</div>;
-  } else if (props.pastDelay) {
-    return <div>Loading...</div>;
-  } else {
-    return null;
-  }
-}
-```
-
 However, this feature is disabled by default. To turn it on, you can pass a
-[`timeout` option](#optstimeout) to `Loadable`.
+[`timeout` option](#optstimeout) to `chunk` and `chunks`.
 
 ```js
-Loadable({
-  loader: () => import('./components/Bar'),
-  loading: Loading,
+chunk(() => import('./components/Bar'), {
   timeout: 10000, // 10 seconds
 });
 ```
 
-### Customizing rendering
+### Customize rendering
 
-By default `Loadable` will render the `default` export of the returned module.
+By default `chunk` and `chunks` will render the `default` export of each returned import.
 If you want to customize this behavior you can use the
-[`render` option](#optsrender).
+[`resolveDefaultImport` option](#optsresolveDefaultImport).
 
-#### With a `loading` component
-
-When a `loading` prop is defined on Loadable, the `render` method is only invoked
-after the loader import has completed loading.
+#### Chunk rendering without a rendering component
 
 ```js
-Loadable({
-  loader: () => import('./my-component'),
-  loading: Loading,
-  render(loaded, props) {
-    let Component = loaded.namedExport;
-    return <Component {...props}/>;
-  }
-});
+
+// Notice the HOC is invoked with no component
+const MyComponentChunk = chunk(() => import('./myComponent'))();
+
 ```
 
-#### Without a `loading` component
+When no rendering component is provided, `null` is rendered until the component **hasLoaded**.
 
-When no `loading` prop is defined on Loadable, `render(state, props)` can access
-`state` and `props` to determine the current state of the loader. `render` is invoked
-for every render of the component, regardless of the current loader state.
 
-```js
-Loadable({
-  loader: () => import('./my-component'),
-  render(state, props) {
-    const { isLoading, pastDelay, timedOut, error, loaded } = state;
-    if (isLoading) {
-      return <div>Loading...</div>;
-    }
+#### Rendering multiple chunks
 
-    let Component = loaded.namedExport;
-    return <Component {...props}/>;
-  }
-});
-```
+`chunks` **requires** a rendering component be provided when invoking the HOC, an error will be thrown if this requirement is not met.
+
 
 ### Loading multiple resources
 
-Technically you can do whatever you want within `loader()` as long as it
-returns a promise and [you're able to render something](#customizing-rendering).
-But writing it out can be a bit annoying.
-
 To make it easier to load multiple resources in parallel, you can use
-[`Loadable.Map`](#loadablemap).
+[`chunks`](#chunks).
 
-When using `Loadable.Map` the [`render()` method](#optsrender) is required.
+When using `chunks` a rendering component **must** be provided when invoking the HOC.
 
-#### With a `loading` component
-
-```js
-Loadable.Map({
-  loader: {
-    Bar: () => import('./Bar'),
-    i18n: () => fetch('./i18n/bar.json').then(res => res.json()),
-  },
-  loading: Loading,
-  render(loaded, props) {
-    let Bar = loaded.Bar.default;
-    let i18n = loaded.i18n;
-    return <Bar {...props} i18n={i18n}/>;
-  },
-});
-```
-The `render(loaded, props)` method is passed `loaded` and `props` arguments, and invoked after
-the loader has completed loading.
-
-#### Without a `loading` component
+#### Using `chunks` for multiple imports
 
 ```js
-Loadable.Map({
-  loader: {
-    Bar: () => import('./Bar'),
-    i18n: () => fetch('./i18n/bar.json').then(res => res.json()),
-  },
-  render(state, props) {
-    const { isLoading, loaded } = state;
-    if (isLoading) {
-	  return <div>Loading...</div>;
-	}
-
-    let Bar = loaded.Bar.default;
-    let i18n = loaded.i18n;
-    return <Bar {...props} i18n={i18n}/>;
-  },
-});
+const MultiComponentChunk = chunks({
+  Bar: () => import('./Bar'),
+  i18n: () => fetch('./i18n/bar.json').then(res => res.json())
+}, {
+  delay: 300,
+  // other options here...
+})(RequiredRendererComponent);
 ```
 
-The `render(state, props)` method is passed `state` and `props` arguments, and is invoked
-for every render of the Loadable regardless of the internal loadable state.
 
 ### Preloading
 
-As an optimization, you can also decide to preload a component before it gets
+As an optimization, you can also decide to preload one or more components before being
 rendered.
+
+#### Preload a single chunk
 
 For example, if you need to load a new component when a button gets pressed,
 you could start preloading the component when the user hovers over the button.
 
-The component created by `Loadable` exposes a
+The components created by `chunk` and `chunks` expose a
 [static `preload` method](#loadablecomponentpreload) which does exactly this.
 
 ```js
-const LoadableBar = Loadable({
-  loader: () => import('./Bar'),
-  loading: Loading,
-});
+const BarChunk = chunk(() => import('./Bar'))();
 
 class MyComponent extends React.Component {
   state = { showBar: false };
@@ -425,7 +354,7 @@ class MyComponent extends React.Component {
   };
 
   onMouseOver = () => {
-    LoadableBar.preload();
+    BarChunk.preload();
   };
 
   render() {
@@ -436,208 +365,140 @@ class MyComponent extends React.Component {
           onMouseOver={this.onMouseOver}>
           Show Bar
         </button>
-        {this.state.showBar && <LoadableBar/>}
+        {this.state.showBar && <BarChunk />}
       </div>
     )
   }
 }
 ```
 
-<h2>
-  <hr>
-  <hr>
-  <img src="http://thejameskyle.com/img/react-loadable-ssr.png" alt="SERVER SIDE RENDERING">
-  <hr>
-  <hr>
-  <small>Server-Side Rendering</small>
-</h2>
+#### Preload multiple chunks
+
+This approach can be used to load all the chunks required for rendering a route on the client, and ensure that all chunks are loaded before rendering the route.
+
+This makes it easier to handle errors, instead of having to render an error for each failed component on the page (which may result in the user seeing many error messages) you can simply render an error page for the user - and allow the user to retry the previous action if desired.
+
+```js
+import { preloadChunks } from 'react-chunk';
+
+const FooChunk = chunk(() => import('./Foo'))();
+const BarChunk = chunk(() => import('./Bar'))();
+
+preloadChunks([
+  FooChunk.getLoader(),
+  BarChunk.getLoader(),
+]).then(() => {
+  // use 'setState()' to render using the loaded components
+}).catch(err => {
+  // handle timeouts, or other errors
+})
+
+```
+
+## Server-Side Rendering
 
 When you go to render all these dynamically loaded components, what you'll get
 is a whole bunch of loading screens.
 
-This really sucks, but the good news is that React Loadable is designed to
-make server-side rendering work as if nothing is being loaded dynamically.
+This really sucks, but the good news is that React Chunk is designed to
+make server-side rendering work as if nothing is being imported dynamically.
 
-Here's our starting server using [Express](https://expressjs.com/).
-
-```js
-import express from 'express';
-import React from 'react';
-import ReactDOMServer from 'react-dom/server';
-import App from './components/App';
-
-const app = express();
-
-app.get('/', (req, res) => {
-  res.send(`
-    <!doctype html>
-    <html lang="en">
-      <head>...</head>
-      <body>
-        <div id="app">${ReactDOMServer.renderToString(<App/>)}</div>
-        <script src="/dist/main.js"></script>
-      </body>
-    </html>
-  `);
-});
-
-app.listen(3000, () => {
-  console.log('Running on http://localhost:3000/');
-});
-```
-
-### Preloading all your loadable components on the server
+### Preloading all your chunk components on the server
 
 The first step to rendering the correct content from the server is to make sure
-that all of your loadable components are already loaded when you go to render
+that all of your chunk components are already loaded when you go to render
 them.
 
-To do this, you can use the [`Loadable.preloadAll`](#loadablepreloadall)
-method. It returns a promise that will resolve when all your loadable
+To do this, you can use the [`preloadAll`](#loadablepreloadall)
+method. It returns a promise that will resolve when all your chunk
 components are ready.
 
 ```js
-Loadable.preloadAll().then(() => {
+import { preloadAll } from 'react-chunk';
+
+preloadAll().then(() => {
   app.listen(3000, () => {
     console.log('Running on http://localhost:3000/');
   });
 });
 ```
 
-### Picking up a server-side rendered app on the client
+#### Configure babel and webpack
 
-This is where things get a little bit tricky. So let's prepare ourselves
-little bit.
+Ensure you have [configured babel and webpack](#environmentconfiguration) for **both** _client_ and _server_ builds.
 
-In order for us to pick up what was rendered from the server we need to have
-all the same code that was used to render on the server.
+The babel plugin adds additional information to all of your `chunk` and `chunks`.
 
-To do this, we first need our loadable components telling us which modules they
-are rendering.
+#### Tracking which dynamic modules were rendered
 
-#### Declaring which modules are being loaded
+Next we need to find out which chunks were used to perform the server render.
 
-There are two options in [`Loadable`](#loadable) and
-[`Loadable.Map`](#loadablemap) which are used to tell us which modules our
-component is trying to load: [`opts.modules`](#optsmodules) and
-[`opts.webpack`](#optswebpack).
+For this, there is the [`Recorder`](#chunkrecorder) component which can
+be used to record all the chunks used for rendering.
 
 ```js
-Loadable({
-  loader: () => import('./Bar'),
-  modules: ['./Bar'],
-  webpack: () => [require.resolveWeak('./Bar')],
-});
-```
-
-But don't worry too much about these options. React Loadable includes a
-[Babel plugin](#babel-plugin) to add them for you.
-
-Just add the `react-loadable/babel` plugin to your Babel config:
-
-```json
-{
-  "plugins": [
-    "react-loadable/babel"
-  ]
-}
-```
-
-Now these options will automatically be provided.
-
-#### Finding out which dynamic modules were rendered
-
-Next we need to find out which modules were actually rendered when a request
-comes in.
-
-For this, there is [`Loadable.Capture`](#loadablecapture) component which can
-be used to collect all the modules that were rendered.
-
-```js
-import Loadable from 'react-loadable';
+import ChunkRecorder from 'react-chunk/Recorder';
 
 app.get('/', (req, res) => {
-  let modules = [];
+  let renderedChunks = [];
 
   let html = ReactDOMServer.renderToString(
-    <Loadable.Capture report={moduleName => modules.push(moduleName)}>
+    <ChunkRecorder addChunk={chunkName => renderedChunks.push(chunkName)}>
       <App/>
-    </Loadable.Capture>
+    </ChunkRecorder>
   );
 
-  console.log(modules);
+  console.log(renderedChunks);
 
   res.send(`...${html}...`);
 });
 ```
 
-#### Mapping loaded modules to bundles
+#### Resolving rendered chunks
 
-In order to make sure that the client loads all the modules that were rendered
-server-side, we'll need to map them to the bundles that Webpack created.
+In order to make sure that the client loads all the resources required by the
+server-side render, we need to resolve the chunks that Webpack created.
 
-This comes in two parts.
+First we need to configure Webpack to write the chunk data to a file. Use the [React Chunk Webpack plugin](#webpack-plugin).
 
-First we need Webpack to tell us which bundles each module lives inside. For
-this there is the [React Loadable Webpack plugin](#webpack-plugin).
-
-Import the `ReactLoadablePlugin` from `react-loadable/webpack` and include it
-in your webpack config. Pass it a `filename` for where to store the JSON data
-about our bundles.
+Then we can use the plugin output to determine the chunks required for the client render. To determine the files required for each chunk, import the [`resolveChunks`](#resolveChunks)
+method from `react-chunk/webpack` and the data from Webpack.
 
 ```js
-// webpack.config.js
-import { ReactLoadablePlugin } from 'react-loadable/webpack';
-
-export default {
-  plugins: [
-    new ReactLoadablePlugin({
-      filename: './dist/react-loadable.json',
-    }),
-  ],
-};
-```
-
-Then we'll go back to our server and use this data to convert our modules to
-bundles.
-
-To convert from modules to bundles, import the [`getBundles`](#getbundles)
-method from `react-loadable/webpack` and the data from Webpack.
-
-```js
-import Loadable from 'react-loadable';
-import { getBundles } from 'react-loadable/webpack'
-import stats from './dist/react-loadable.json';
+import ChunkRecorder from 'react-chunk/Recorder';
+import { resolveChunks } from 'react-chunk/webpack'
+import chunkData from './dist/react-chunk.json';
 
 app.get('/', (req, res) => {
-  let modules = [];
+  let renderedChunks = [];
 
   let html = ReactDOMServer.renderToString(
-    <Loadable.Capture report={moduleName => modules.push(moduleName)}>
+    <ChunkRecorder addChunk={chunkName => renderedChunks.push(chunkName)}>
       <App/>
-    </Loadable.Capture>
+    </ChunkRecorder>
   );
 
-  let bundles = getBundles(stats, modules);
+  let resources = resolveChunks(chunkData, renderedChunks);
 
   // ...
 });
 ```
 
-We can then render these bundles into `<script>` tags in our HTML.
+We can then render these resources using `<script>` and `<link>` tags in our HTML.
 
-It is important that the bundles are included _before_ the main bundle, so that
+It is important that the script files are included _before_ the main entry point, so that
 they can be loaded by the browser prior to the app rendering.
 
-However, as the Webpack manifest (including the logic for parsing bundles) lives in
-the main bundle, it will need to be extracted into its own chunk.
+However, as the Webpack manifest (including the logic for parsing chunks) lives in
+the main chunk, it will need to be extracted into its own chunk.
 
-This is easy to do with the [CommonsChunkPlugin](https://webpack.js.org/plugins/commons-chunk-plugin/)
+This is easy to do with the [CommonsChunkPlugin](https://webpack.js.org/plugins/commons-chunk-plugin/), add it to your webpack plugins configuration.
 
 ```js
 // webpack.config.js
 export default {
   plugins: [
+    //...other webpack plugins
     new webpack.optimize.CommonsChunkPlugin({
       name: 'manifest',
       minChunks: Infinity
@@ -646,17 +507,26 @@ export default {
 }
 ```
 
+Ensure the `manifest.js` is loaded before all other webpack scripts.
+
 ```js
-let bundles = getBundles(stats, modules);
+let resources = getBundles(chunkData, renderedChunks);
+
+let styles = resources.filter(bundle => bundle.file.endsWith('.css'));
+let scripts = resources.filter(bundle => bundle.file.endsWith('.js'));
 
 res.send(`
   <!doctype html>
   <html lang="en">
-    <head>...</head>
+    <head>
+    ${styles.map(bundle => {
+      return `<link rel="stylesheet" href ="/dist/${bundle.file}"></script>`
+    }).join('\n')}
+    </head>
     <body>
       <div id="app">${html}</div>
       <script src="/dist/manifest.js"></script>
-      ${bundles.map(bundle => {
+      ${scripts.map(bundle => {
         return `<script src="/dist/${bundle.file}"></script>`
       }).join('\n')}
       <script src="/dist/main.js"></script>
@@ -665,23 +535,26 @@ res.send(`
 `);
 ```
 
-#### Preloading ready loadable components on the client
+#### Preloading resolved chunks on the client
 
-We can use the [`Loadable.preloadReady()`](#loadablepreloadready) method on the
-client to preload the loadable components that were included on the page.
+We can use the [`preloadReady()`](#loadablepreloadready) method on the
+client to preload the chunk components that were included on the page.
 
-Like [`Loadable.preloadAll()`](#loadablepreloadall), it returns a promise,
+Like [`preloadAll()`](#loadablepreloadall), it returns a promise,
 which on resolution means that we can hydrate our app.
 
 ```js
 // src/entry.js
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Loadable from 'react-loadable';
+import { preloadReady } from 'react-chunk';
 import App from './components/App';
 
-Loadable.preloadReady().then(() => {
+preloadReady().then(() => {
   ReactDOM.hydrate(<App/>, document.getElementById('app'));
+}).catch(err => {
+  // errors can occur if imports timeout or fail
+  // render an error page
 });
 
 ```
@@ -690,291 +563,153 @@ Loadable.preloadReady().then(() => {
   Now server-side rendering should work perfectly!
 </h4>
 
-<h2>
-  <hr>
-  <hr>
-  <img src="http://thejameskyle.com/img/react-loadable-api-docs.png" alt="API DOCS">
-  <hr>
-  <hr>
-  <small>API Docs</small>
-</h2>
+## API
 
-### `Loadable`
+### `chunk`
 
-A higher-order component for dynamically [loading](#optsloader) a module before
-[rendering](#optsrender) it, a [loading](#opts.loading) component is rendered
-while the module is unavailable.
+A higher-order component for dynamically importing a single resource.
+
+`chunk(import: function[, options: Object]): ChunkComponent`
 
 ```js
-const LoadableComponent = Loadable({
-  loader: () => import('./Bar'),
-  loading: Loading,
+import { chunk } from 'react-chunk';
+
+const ChunkComponent = chunk(() => import('./Bar'), {
   delay: 200,
   timeout: 10000,
-});
+})([WrappedComponent]);
 ```
 
-This returns a [LoadableComponent](#loadablecomponent).
+This returns a [ChunkComponent](#chunkcomponent). The `WrappedComponent` for a `chunk` is optional, but recommended for complete control of the rendering. The `WrappedComponent` will be passed an additional single prop `chunk`, that provides all state required to render the imported resource.
 
-### `Loadable.Map`
+### `chunks`
 
 A higher-order component that allows you to load multiple resources in parallel.
 
-Loadable.Map's [`opts.loader`](#optsloader) accepts an object of functions, and
-needs a [`opts.render`](#optsrender) method.
+`chunks(importMap: {[string]: function}[, options: Object]): ChunksComponent`
 
-#### With a `loading` component
-
-When a `loading` prop is defined on Loadable, the `render` method is only invoked
-after the loader import has completed loading.
 
 ```js
-Loadable.Map({
-  loader: {
-    Bar: () => import('./Bar'),
-    i18n: () => fetch('./i18n/bar.json').then(res => res.json()),
-  },
-  loading: Loading,
-  render(loaded, props) {
-    let Bar = loaded.Bar.default;
-    let i18n = loaded.i18n;
-    return <Bar {...props} i18n={i18n}/>;
-  }
-});
+import { chunks } from 'react-chunk';
+
+const ChunksComponent = chunks({
+  Foo: () => import('./Foo'),
+  Bar: () => import('./Bar')
+}, {
+  // define options here...
+  delay: 200,
+  timeout: 10000,
+})(WrappedComponent);
 ```
 
-When using `Loadable.Map` the `render()` method's `loaded` param is an object and
-it will have a `loader` prop with the same shape as your `loader`.
-
-#### Without a `loading` component
-
-```js
-Loadable.Map({
-  loader: {
-    Bar: () => import('./Bar'),
-    i18n: () => fetch('./i18n/bar.json').then(res => res.json()),
-  },
-  render(state, props) {
-    const { isLoading, loaded } = state;
-    if (isLoading) {
-	  return <div>Loading...</div>;
-	}
-
-    let Bar = loaded.Bar.default;
-    let i18n = loaded.i18n;
-    return <Bar {...props} i18n={i18n}/>;
-  },
-});
-```
-
-When using `Loadable.Map` the `render(state, props)` method is passed `state` and `props` arguments, and is invoked
-for every render of the Loadable regardless of the internal loadable state.
+This returns a [ChunksComponent](#chunkscomponent). The `WrappedComponent` for a `chunks` is required to control rendering of all imported resources. The `WrappedComponent` will be passed an additional single prop `chunk`, that provides all state required to render the imported resource.
 
 
-### `Loadable` and `Loadable.Map` Options
+### `chunk` and `chunks` Options
 
-#### `opts.loader`
+#### `opts.displayName: string`
 
-A function returning a promise that loads your module.
+The react display name to assign when creating the HOC.
 
-```js
-Loadable({
-  loader: () => import('./Bar'),
-});
-```
+#### `opts.hoist: boolean`
 
-When using with [`Loadable.Map`](#loadablemap) this accepts an object of these
-types of functions.
+`true` to _hoist_ non-react static methods of the imported component to the HOC. Defaults to `false`.
 
-```js
-Loadable.Map({
-  loader: {
-    Bar: () => import('./Bar'),
-    i18n: () => fetch('./i18n/bar.json').then(res => res.json()),
-  },
-});
-```
+Note that the static methods are only hoisted after the component is loaded (obviously) - if you're using `hoist: true` on a component its _recommended_ that you `preload` (or `preloadChunks`) the component to avoid invoking static methods that have not yet been assigned to the HOC.
 
-When using with `Loadable.Map` you'll also need to pass a
-[`opts.render`](#optsrender) function.
+Using this option with `chunks` is not supported and will result in an error.
 
-#### `opts.loading`
+#### `opts.resolveDefaultImport: (imported, importKey) => mixed`
 
-A [`LoadingComponent`](#loadingcomponent) that renders while a module is
-loading or when it errors.
+By default, the `.default` export of the imported resource is returned to the `Imported` property (for `chunk`) or the `imported` property (for `chunks`).
 
-The `loading` prop changes the arguments received by the `render` method, this is to maintain backwards compatibility.
- * When the `loading` prop **is** defined, the first argument received by the `render(loaded, props)` method
- is the `loaded` that is the resolved value of [`opts.loader`](#optsloader)
- * When the `loading` props **is not** defined, the first argument received by `render(state, props)` method
- is the loadable state. You can access the loaded component(s) using `state.loaded`.
+The `importKey` is only passed for `chunks`.
 
-```js
-Loadable({
-  loading: LoadingComponent,
-});
-```
+#### `opts.retryBackOff: Array<number>`
 
-#### `opts.delay`
+Allows automatic retry for failed imports using the assigned backOff.
+
+When used in conjuntion with `timeout`, retry attempts will be invoked after the configured `timeout` value has expired.
+
+For example: `[250, 500]` will result in the first retry attempt starting 250ms **after** the first `timeout` or `error`. The second retry will start 500ms **after** the second _timeout_ or _error_.
+
+
+#### `opts.delay: number`
 
 Time to wait (in milliseconds) before passing
 [`props.pastDelay`](#propspastdelay) to your [`loading`](#optsloading)
 component. This defaults to `200`.
 
-```js
-Loadable({
-  delay: 200
-});
-```
-
 [Read more about delays](#avoiding-flash-of-loading-component).
 
-#### `opts.timeout`
+#### `opts.timeout: number`
 
 Time to wait (in milliseconds) before passing
 [`props.timedOut`](#propstimedout) to your [`loading`](#optsloading) component.
 This is turned off by default.
 
-```js
-Loadable({
-  timeout: 10000
-});
-```
-
 [Read more about timeouts](#timing-out-when-the-loader-is-taking-too-long).
 
-#### `opts.render`
-
-A react element or function to customize the rendering of loaded modules.
-
-##### React element with a `loading` component
-
-Receives a `loaded` prop that is the resolved value of [`opts.loader`](#optsloader)
-and `props` which are the props passed to the
-[`LoadableComponent`](#loadablecomponent).
-
-```js
-function CodeSplitRenderer(props) {
-  const { codeSplit, ...componentProps } = props;
-
-  // when used with a 'loading' component, the loaded state is assigned directly to the `codeSplit` prop
-  let Component = codeSplit.default;
-  return <Component {...componentProps}/>;
-}
-
-Loadable({
-  loading: Loading,
-  render: <CodeSplitRenderer />
-});
-```
-
-##### React element without a `loading` component
-
-Receives `state`, with a `loader` prop that is the resolved value of [`opts.loader`](#optsloader)
-and `props` which are the props passed to the
-[`LoadableComponent`](#loadablecomponent).
-
-```js
-function CodeSplitRenderer(props) {
-  const { codeSplit, ...componentProps } = props;
-
-  // when used without a 'loading' component, the loadable state is assigned to the `codeSplit` prop
-  const { isLoading, loaded, pastDelay, timedOut, error } = codeSplit;
-
-  let Component = loaded.default;
-  return <Component {...componentProps}/>;
-}
-
-Loadable({
-  render: <CodeSplitRenderer />
-});
-```
-
-##### Function with a `loading` component
-
-Receives a `loaded` prop that is the resolved value of [`opts.loader`](#optsloader)
-and `props` which are the props passed to the
-[`LoadableComponent`](#loadablecomponent).
-
-```js
-Loadable({
-  loading: Loading,
-  render(loaded, props) {
-    let Component = loaded.default;
-    return <Component {...props}/>;
-  }
-});
-```
-
-##### Function without a `loading` component
-
-Receives `state`, with a `loader` prop that is the resolved value of [`opts.loader`](#optsloader)
-and `props` which are the props passed to the
-[`LoadableComponent`](#loadablecomponent).
-
-```js
-Loadable({
-  render(state, props) {
-    const { isLoading, loaded, pastDelay, timedOut, error } = state;
-    if (isLoading) {
-	  return <div>Loading...</div>;
-	}
-
-    let Component = loaded.default;
-    return <Component {...props}/>;
-  }
-});
-```
-
-#### `opts.webpack`
+#### `opts.webpack: function`
 
 An optional function which returns an array of Webpack module ids which you can
 get with `require.resolveWeak`.
 
 ```js
-Loadable({
-  loader: () => import('./Foo'),
+chunk(() => import('./component'), {
   webpack: () => [require.resolveWeak('./Foo')],
 });
 ```
 
 This option can be automated with the [Babel Plugin](#babel-plugin).
 
-#### `opts.modules`
+#### `opts.modules: Array<string>`
 
 An optional array with module paths for your imports.
 
 ```js
-Loadable({
-  loader: () => import('./my-component'),
-  modules: ['./my-component'],
+chunk(() => import('./component'), {
+  modules: ['./my-component']
 });
 ```
 
 This option can be automated with the [Babel Plugin](#babel-plugin).
 
-### `LoadableComponent`
+### `ChunkComponent`
 
-This is the component returned by `Loadable` and `Loadable.Map`.
+This is the component returned by `chunk`.
 
 ```js
-const LoadableComponent = Loadable({
+const ChunkComponent = chunk({
   // ...
 });
 ```
 
 Props passed to this component will be passed straight through to the
-dynamically loaded component via [`opts.render`](#optsrender).
+wrapped component, in additional to a `chunk` prop that includes all data required for rendering the imported resource.
 
-#### `LoadableComponent.preload()`
+### `ChunksComponent`
 
-This is a static method on [`LoadableComponent`](#loadablecomponent) which can
-be used to load the component ahead of time.
+This is the component returned by `chunks`.
 
 ```js
-const LoadableComponent = Loadable({...});
+const ChunksComponent = chunks({
+  // ...
+});
+```
 
-LoadableComponent.preload();
+Props passed to this component will be passed straight through to the
+wrapped component, in additional to a `chunk` prop that includes all data required for rendering the imported resources.
+
+### Common `chunk` and `chunks` static methods
+#### `preload()`
+
+This is a static method that can be used to load the component ahead of time.
+
+```js
+const ChunkComponent = chunk({...});
+
+ChunkComponent.preload();
 ```
 
 This returns a promise, but you should avoid waiting for that promise to
@@ -982,38 +717,78 @@ resolve to update your UI. In most cases it creates a bad user experience.
 
 [Read more about preloading](#preloading).
 
-### `LoadingComponent`
+#### `getLoader()`
 
-This is the component you pass to [`opts.loading`](#optsloading).
+This is a static method that can be used to obtain a reference to the components loader. It should be used in conjuntion with [preloadChunks()](#preloadchunks)
 
 ```js
-function LoadingComponent(props) {
-  if (props.error) {
-    // When the loader has errored
-    return <div>Error!</div>;
-  } else if (props.timedOut) {
-    // When the loader has taken longer than the timeout
-    return <div>Taking a long time...</div>;
-  } else if (props.pastDelay) {
-    // When the loader has taken longer than the delay
-    return <div>Loading...</div>;
-  } else {
-    // When the loader has just started
-    return null;
+const ChunkComponent = chunk({...});
+
+ChunkComponent.getLoader();
+```
+
+
+### `WrappedComponent`
+
+This is the component you pass to the `chunk()` or `chunks()` HOC.
+
+```js
+function WrappedComponent(props) {
+  const {
+    chunk: {
+      isLoading,
+      hasLoaded,
+      pastDelay,
+      timedOut,
+      error,
+      retry,
+      loaded,
+      Imported // - only for 'chunk()'
+      // imported - only for 'chunks()'
+      // importKeys - only for 'chunks()'
+    },
+    ...restProps
+  } = prop;
+
+  if (hasLoaded) {
+    return <Imported {...restProps } />;
   }
+
+  if (error) {
+    return <div>An error occured</div>;
+  }
+
+  if (timedOut) {
+    return (
+      <div>
+        This is taking a while..
+        <a onClick={() => retry()}>retry?</a>
+      </div>
+    );
+  }
+
+  if (isLoading && pastDelay) {
+    return <div>Loading...</div>;
+  }
+
+  return null;
 }
 
-Loading({
-  loading: LoadingComponent,
-});
 ```
 
 [Read more about loading components](#creating-a-great-loading-component)
 
-#### `props.error`
+#### `chunk.isLoading: boolean`
 
-A boolean prop passed to [`LoadingComponent`](#loadingcomponent) when the
-[`loader`](#optsloader) has failed.
+`true` if the import(s) are currently being loaded, otherwise `false`.
+
+#### `chunk.hasLoaded: boolean`
+
+`true` if the import(s) have been successfully loaded, otherwise `false`.
+
+#### `chunk.error: boolean`
+
+A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) when the loading resource(s) has failed.
 
 ```js
 function LoadingComponent(props) {
@@ -1027,9 +802,9 @@ function LoadingComponent(props) {
 
 [Read more about errors](#loading-error-states).
 
-#### `props.timedOut`
+#### `chunk.timedOut: boolean`
 
-A boolean prop passed to [`LoadingComponent`](#loadingcomponent) after a set
+A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) after a set
 [`timeout`](#optstimeout).
 
 ```js
@@ -1044,9 +819,9 @@ function LoadingComponent(props) {
 
 [Read more about timeouts](#timing-out-when-the-loader-is-taking-too-long).
 
-#### `props.pastDelay`
+#### `chunk.pastDelay: boolean`
 
-A boolean prop passed to [`LoadingComponent`](#loadingcomponent) after a set
+A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) after a set
 [`delay`](#optsdelay).
 
 ```js
@@ -1061,22 +836,23 @@ function LoadingComponent(props) {
 
 [Read more about delays](#avoiding-flash-of-loading-component).
 
-### `Loadable.preloadAll()`
+### `preloadAll()`
 
 This will call all of the
-[`LoadableComponent.preload`](#loadablecomponentpreload) methods recursively
+[`WrappedComponent.preload`](#wrappedcomponentpreload) methods recursively
 until they are all resolved. Allowing you to preload all of your dynamic
 modules in environments like the server.
 
 ```js
-Loadable.preloadAll().then(() => {
+import { preloadAll } from 'react-chunk';
+preloadAll().then(() => {
   app.listen(3000, () => {
     console.log('Running on http://localhost:3000/');
   });
 });
 ```
 
-It's important to note that this requires that you declare all of your loadable
+It's important to note that this requires that you declare all of your chunk
 components when modules are initialized rather than when your app is being
 rendered.
 
@@ -1084,7 +860,7 @@ rendered.
 
 ```js
 // During module initialization...
-const LoadableComponent = Loadable({...});
+const LoadableComponent = chunk(...);
 
 class MyComponent extends React.Component {
   componentDidMount() {
@@ -1101,46 +877,48 @@ class MyComponent extends React.Component {
 class MyComponent extends React.Component {
   componentDidMount() {
     // During app render...
-    const LoadableComponent = Loadable({...});
+    const LoadableComponent = chunk(...);
   }
 }
 ```
 
-> **Note:** `Loadable.preloadAll()` will not work if you have more than one
-> copy of `react-loadable` in your app.
+> **Note:** `preloadAll()` will not work if you have more than one
+> copy of `react-chunk` in your app.
 
-[Read more about preloading on the server](#preloading-all-your-loadable-components-on-the-server).
+[Read more about preloading on the server](#preloading-all-your-chunk-components-on-the-server).
 
-### `Loadable.preloadReady()`
+### `preloadReady()`
 
 Check for modules that are already loaded in the browser and call the matching
-[`LoadableComponent.preload`](#loadablecomponentpreload) methods.
+[`WrappedComponent.preload`](#wrappedcomponentpreload) methods.
 
 ```js
-Loadable.preloadReady().then(() => {
+import { preloadReady } from 'react-chunk';
+preloadReady().then(() => {
   ReactDOM.hydrate(<App/>, document.getElementById('app'));
 });
 ```
 
 [Read more about preloading on the client](#waiting-to-render-on-the-client-until-all-the-bundles-are-loaded).
 
-### `Loadable.Capture`
+### `Recorder`
 
-A component for reporting which modules were rendered.
+A component for reporting which chunks were used for rendering.
 
-Accepts a `report` prop which is called for every `moduleName` that is
-rendered via React Loadable.
+Accepts an `addChunk` prop which is called for every `chunkName` that is
+rendered via React Chunk.
 
 ```js
-let modules = [];
+import ChunkRecorder from 'react-chunk/Recorder';
+let renderedChunks = [];
 
 let html = ReactDOMServer.renderToString(
-  <Loadable.Capture report={moduleName => modules.push(moduleName)}>
+  <ChunkRecorder addChunk={chunkName => renderedChunks.push(chunkName)}>
     <App/>
-  </Loadable.Capture>
+  </ChunkRecorder>
 );
 
-console.log(modules);
+console.log(renderedChunks);
 ```
 
 [Read more about capturing rendered modules](#finding-out-which-dynamic-modules-were-rendered).
@@ -1148,53 +926,53 @@ console.log(modules);
 ## Babel Plugin
 
 Providing [`opts.webpack`](#optswebpack) and [`opts.modules`](#optsmodules) for
-every loadable component is a lot of manual work to remember to do.
+every chunk component is a lot of manual work to remember to do.
 
 Instead you can add the Babel plugin to your config and it will automate it for
 you:
 
 ```json
 {
-  "plugins": ["react-loadable/babel"]
+  "plugins": ["react-chunk/babel"]
 }
 ```
 
 **Input**
 
 ```js
-import Loadable from 'react-loadable';
+import { chunk, chunks } from 'react-chunk';
 
-const LoadableMyComponent = Loadable({
-  loader: () => import('./MyComponent'),
-});
+const ChunkMyComponent = chunk(() => import('./MyComponent'));
 
-const LoadableComponents = Loadable.Map({
-  loader: {
-    One: () => import('./One'),
-    Two: () => import('./Two'),
-  },
+const ChunkComponents = chunks({
+  One: () => import('./One'),
+  Two: () => import('./Two'),
 });
 ```
 
 **Output**
 
 ```js
-import Loadable from 'react-loadable';
-import path from 'path';
+import { chunk, chunks } from 'react-chunk';
 
-const LoadableMyComponent = Loadable({
-  loader: () => import('./MyComponent'),
-  webpack: () => [require.resolveWeak('./MyComponent')],
-  modules: [path.join(__dirname, './MyComponent')],
+const ChunkMyComponent = chunk(
+  () => import('./MyComponent'),
+  {},
+  {
+    webpack: () => [require.resolveWeak('./MyComponent')],
+    modules: ['./MyComponent']
+  }
 });
 
-const LoadableComponents = Loadable.Map({
-  loader: {
+const ChunkComponents = chunks({
     One: () => import('./One'),
     Two: () => import('./Two'),
   },
-  webpack: () => [require.resolveWeak('./One'), require.resolveWeak('./Two')],
-  modules: [path.join(__dirname, './One'), path.join(__dirname, './Two')],
+  {},
+  {
+    webpack: () => [require.resolveWeak('./One'), require.resolveWeak('./Two')],
+    modules: ['./One', './Two']
+  }
 });
 ```
 
@@ -1203,17 +981,17 @@ const LoadableComponents = Loadable.Map({
 ## Webpack Plugin
 
 In order to [send the right bundles down](#mapping-loaded-modules-to-bundles)
-when rendering server-side, you'll need the React Loadable Webpack plugin 
+when rendering server-side, you'll need the React Chunk Webpack plugin 
 to provide you with a mapping of modules to bundles.
 
 ```js
 // webpack.config.js
-import { ReactLoadablePlugin } from 'react-loadable/webpack';
+import { ReactChunkPlugin } from 'react-chunk/webpack';
 
 export default {
   plugins: [
-    new ReactLoadablePlugin({
-      filename: './dist/react-loadable.json',
+    new ReactChunkPlugin({
+      filename: './dist/react-chunk.json',
     }),
   ],
 };
@@ -1223,101 +1001,90 @@ This will create a file (`opts.filename`) which you can import to map modules
 to bundles.
 
 ### `opts.filename`
-Required, the destination file for writing react-loadable module data
+Required, the destination file for writing react-chunk module data
 
 ### `opts.ignoreChunkNames`
 Optional, an array of webpack chunk names to exclude from the module data
 
+By ignoring the main entry point (ie: `main` or `index`) only required module data is included in the output.
+
 [Read more about mapping modules to bundles](#mapping-loaded-modules-to-bundles).
 
-### `getBundles`
+### `resolveChunks`
 
-A method exported by `react-loadable/webpack` for converting modules to
-bundles.
+A method exported by `react-chunk/webpack` for converting chunks to
+resources.
 
 ```js
-import { getBundles } from 'react-loadable/webpack';
+import { resolveChunks } from 'react-chunk/webpack';
 
-let bundles = getBundles(stats, modules);
+let resources = resolveChunks(chunkData, renderedChunks);
 ```
 
 [Read more about mapping modules to bundles](#mapping-loaded-modules-to-bundles).
 
-<h2>
-  <hr>
-  <hr>
-  <img src="http://thejameskyle.com/img/react-loadable-faq.png" alt="FAQ">
-  <hr>
-  <hr>
-  <small>FAQ</small>
-</h2>
+## FAW
 
 ### How do I avoid repetition?
 
 Specifying the same `loading` component or `delay` every time you use
-`Loadable()` gets repetitive fast. Instead you can wrap `Loadable` with your
+`chunk()` or `chunks()` gets repetitive fast. Instead you can wrap `chunk` and `chunks` with your
 own Higher-Order Component (HOC) to set default options.
 
 ```js
-import Loadable from 'react-loadable';
-import Loading from './my-loading-component';
+// chunkOptions.js
+const defaultChunkOpts = {
+  delay: 200,
+  timeout: 10,
+};
 
-export default function MyLoadable(opts) {
-  return Loadable(Object.assign({
-    loading: Loading,
-    delay: 200,
-    timeout: 10,
-  }, opts));
+export default defaultChunkOpts;
+```
+
+```js
+import { chunk chunks } from 'react-chunk';
+import Loading from './my-loading-component';
+import defaultChunkOpts form './chunkOptions';
+
+
+export default function MyComponentChunk(opts = {}) {
+  return chunk(
+    () => import('./my-component'),
+    Object.assign({}, defaultChunkOpts, opts)
+  );
 };
 ```
 
-Then you can just specify a `loader` when you go to use it.
+Then you can specify additional `options` and a `WrappedComponent` when you go to use it.
 
 ```js
-import MyLoadable from './MyLoadable';
+import MyComponentChunk from './MyComponentChunk';
+import ChunkRenderer from './ChunkRenderer';
 
-const LoadableMyComponent = MyLoadable({
-  loader: () => import('./MyComponent'),
-});
+const MyAutoRetryComponentChunk = MyComponentChunk({
+  retryBackOff: [200, 300]
+})(ChunkRenderer);
 
 export default class App extends React.Component {
   render() {
-    return <LoadableMyComponent/>;
-  }
-}
-```
-
-Unfortunately at the moment using wrapped Loadable breaks [react-loadable/babel](#babel-plugin) so in such case you have to add required properties (`modules`, `webpack`) manually.
-
-```js
-import MyLoadable from './MyLoadable';
-
-const LoadableMyComponent = MyLoadable({
-  loader: () => import('./MyComponent'),
-  modules: ['./MyComponent'],
-  webpack: () => [require.resolveWeak('./MyComponent')],
-});
-
-export default class App extends React.Component {
-  render() {
-    return <LoadableMyComponent/>;
+    return <MyAutoRetryComponentChunk />;
   }
 }
 ```
 
 ### How do I handle other styles `.css` or sourcemaps `.map` with server-side rendering?
 
-When you call [`getBundles`](#getbundles), it may return file types other than
+When you call [`resolveChunks`](#resolveChunks), it may return file types other than
 JavaScript depending on your Webpack configuration.
 
 To handle this, you should manually filter down to the file extensions that
 you care about:
 
 ```js
-let bundles = getBundles(stats, modules);
+let resources = resolveChunks(stats, modules);
 
-let styles = bundles.filter(bundle => bundle.file.endsWith('.css'));
-let scripts = bundles.filter(bundle => bundle.file.endsWith('.js'));
+let styles = resources.filter(bundle => bundle.file.endsWith('.css'));
+let scripts = resources.filter(bundle => bundle.file.endsWith('.js'));
 
 res.send(`
   <!doctype html>

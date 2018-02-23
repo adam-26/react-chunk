@@ -1,8 +1,7 @@
 'use strict';
-
 const React = require('react');
 const renderer = require('react-test-renderer');
-const Loadable = require('../src');
+const { chunk, chunks, preloadChunks, preloadReady, preloadAll } = require('../src');
 
 function waitFor(delay) {
   return new Promise(resolve => {
@@ -22,328 +21,432 @@ function createLoader(delay, loader, error) {
   };
 }
 
-function MyLoadingComponent(props) {
-  return <div>MyLoadingComponent {JSON.stringify(props)}</div>;
+function SingleImport({ chunk, ...rest }) {
+  const { Imported, ...chunkState } = chunk;
+  if (chunkState.hasLoaded) {
+    return <Imported {...rest} />;
+  }
+
+  return <div>MyLoadingComponent {JSON.stringify(chunkState)}</div>;
+}
+
+// Allows '_' prefix to infer a named component
+function lookupMapComponent(key, imports) {
+  if (key.indexOf('_') === 0) {
+    return imports[key][key.substring(1)];
+  }
+
+  return imports[key];
+}
+
+function MapImport({ chunk, ...rest }) {
+  const { imported, ...chunkState } = chunk;
+  const { isLoading, hasLoaded, error, importKeys } = chunkState;
+
+  if (isLoading || error) {
+      return <div>MyLoadingComponent {JSON.stringify(chunkState)}</div>;
+  }
+
+  if (hasLoaded) {
+      return (
+        <React.Fragment>
+          {importKeys.map((key, idx) => {
+            return React.createElement(lookupMapComponent(key, imported), { ...rest, key: idx })
+          })}
+        </React.Fragment>
+      );
+  }
+
+  return null;
 }
 
 function MyComponent(props) {
   return <div>MyComponent {JSON.stringify(props)}</div>;
 }
 
-function CodeSplitRenderer({ codeSplit, ...props }) {
-  // Enable component to render with or without a 'loading' component configured
-  const { isLoading, loaded } = typeof codeSplit.isLoading === 'boolean' ? codeSplit : { loaded: codeSplit };
-  if (isLoading) {
-    return <MyLoadingComponent {...codeSplit} />;
-  }
-
-  return <loaded.MyComponent {...props}/>;
-}
-
-function CodeSplitMapRenderer({ codeSplit, ...props }) {
-  const { loaded } = codeSplit;
-  return whenLoaded(codeSplit, () => (
-    <div>
-      <loaded.a.MyComponent {...props}/>
-      <loaded.b.MyComponent {...props}/>
-    </div>
-  ));
-}
-
-function whenLoaded(state, loadedComponent) {
-  const { isLoading, error, loaded } = state;
-  if (isLoading || error) {
-    return <div>MyLoadingComponent {JSON.stringify(state)}</div>;
-  }
-
-  if (loaded) {
-    return loadedComponent();
-  }
-
-  return null;
-}
-
 afterEach(async () => {
   try {
-    await Loadable.preloadAll();
+    await preloadAll();
   } catch (err) {}
 });
 
-test('loading success', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => MyComponent),
-    loading: MyLoadingComponent
+describe('chunk', () => {
+  test('missing import throws', async () => {
+    expect(() => chunk({a: createLoader(400, () => MyComponent)})).toThrow();
   });
 
-  let component1 = renderer.create(<LoadableMyComponent prop="foo" />);
+  test('render', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))(SingleImport);
 
-  expect(component1.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component1.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component1.toJSON()).toMatchSnapshot(); // loaded
-
-  let component2 = renderer.create(<LoadableMyComponent prop="bar" />);
-
-  expect(component2.toJSON()).toMatchSnapshot(); // reload
-});
-
-test('delay and timeout', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(300, () => MyComponent),
-    loading: MyLoadingComponent,
-    delay: 100,
-    timeout: 200,
-  });
-
-  let component1 = renderer.create(<LoadableMyComponent prop="foo" />);
-
-  expect(component1.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(100);
-  expect(component1.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(100);
-  expect(component1.toJSON()).toMatchSnapshot(); // timed out
-  await waitFor(100);
-  expect(component1.toJSON()).toMatchSnapshot(); // loaded
-});
-
-test('loading error', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, null, new Error('test error')),
-    loading: MyLoadingComponent
-  });
-
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // errored
-});
-
-test('server side rendering', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => require('../__fixtures__/component')),
-    loading: MyLoadingComponent,
-  });
-
-  await Loadable.preloadAll();
-
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-
-  expect(component.toJSON()).toMatchSnapshot(); // serverside
-});
-
-test('server side rendering es6', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => require('../__fixtures__/component.es6')),
-    loading: MyLoadingComponent,
-  });
-
-  await Loadable.preloadAll();
-
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-
-  expect(component.toJSON()).toMatchSnapshot(); // serverside
-});
-
-test('preload', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => MyComponent),
-    loading: MyLoadingComponent
-  });
-
-  let promise = LoadableMyComponent.preload();
-  await waitFor(200);
-
-  let component1 = renderer.create(<LoadableMyComponent prop="baz" />);
-
-  expect(component1.toJSON()).toMatchSnapshot(); // still loading...
-  await promise;
-  expect(component1.toJSON()).toMatchSnapshot(); // success
-
-  let component2 = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component2.toJSON()).toMatchSnapshot(); // success
-});
-
-test('render', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => ({ MyComponent })),
-    loading: MyLoadingComponent,
-    render(loaded, props) {
-      return <loaded.MyComponent {...props}/>;
-    }
-  });
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // success
-});
-
-test('render element', async () => {
-    let LoadableMyComponent = Loadable({
-        loader: createLoader(400, () => ({ MyComponent })),
-        loading: MyLoadingComponent,
-        render: <CodeSplitRenderer />
-    });
-    let component = renderer.create(<LoadableMyComponent prop="baz" />);
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
     expect(component.toJSON()).toMatchSnapshot(); // initial
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // loading
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // success
-});
+  });
 
-test('render without loading prop', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => ({ MyComponent })),
-    render(state, props) {
-      const { isLoading, loaded } = state;
-      if (isLoading) {
-        return <MyLoadingComponent {...state} />;
+  test('loading success', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))(SingleImport);
+
+    let component1 = renderer.create(<ChunkMyComponent prop="foo" />);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loaded
+
+    let component2 = renderer.create(<ChunkMyComponent prop="bar" />);
+
+    expect(component2.toJSON()).toMatchSnapshot(); // reload
+  });
+
+  test('delay and timeout', async () => {
+    let ChunkMyComponent = chunk(createLoader(300, () => MyComponent), {
+        delay: 100,
+        timeout: 200,
+    })(SingleImport);
+
+    let component1 = renderer.create(<ChunkMyComponent prop="foo" />);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // timed out
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // loaded
+  });
+
+  test('loading error', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, null, new Error('test error')))(SingleImport);
+
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
+
+    expect(component.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // errored
+  });
+
+  test('retryBackOff', async () => {
+    const mockImport = jest.fn();
+    mockImport
+      .mockImplementationOnce(createLoader(300, null, new Error('1')))
+      .mockImplementationOnce(createLoader(200, null, new Error('2')))
+      .mockImplementationOnce(createLoader(200, () => MyComponent));
+
+    let ChunkMyComponent = chunk(mockImport, {
+      retryBackOff: [200, 300]
+    })(SingleImport);
+
+    let component1 = renderer.create(<ChunkMyComponent prop="foo" />);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // first retry - loading
+    await waitFor(400);
+    expect(component1.toJSON()).toMatchSnapshot(); // second retry - loading
+    await waitFor(600);
+    expect(component1.toJSON()).toMatchSnapshot(); // loaded
+  });
+
+  test('timeout and retryBackOff', async () => {
+    const mockImport = jest.fn();
+    mockImport
+      .mockImplementationOnce(createLoader(300, null, new Error('1')))
+      .mockImplementationOnce(createLoader(200, null, new Error('2')))
+      .mockImplementationOnce(createLoader(800, () => MyComponent));
+
+    let ChunkMyComponent = chunk(mockImport, {
+      timeout: 400, // timeout for each import attempt
+      retryBackOff: [200, 200]
+    })(SingleImport);
+
+    let component1 = renderer.create(<ChunkMyComponent prop="foo" />);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(300);
+    expect(component1.toJSON()).toMatchSnapshot(); // first retry - loading
+    await waitFor(400);
+    expect(component1.toJSON()).toMatchSnapshot(); // second retry - loading
+    await waitFor(400);
+    expect(component1.toJSON()).toMatchSnapshot(); // timedOut (after all retry attempts)
+    await waitFor(400);
+    expect(component1.toJSON()).toMatchSnapshot(); // loaded
+  });
+
+  test('retry after error', async () => {
+    const mockImport = jest.fn();
+    mockImport
+      .mockImplementationOnce(createLoader(300, null, new Error('1')))
+      .mockImplementationOnce(createLoader(300, () => MyComponent));
+
+    const RetryChild = ({ chunk, children, ...rest }) => {
+      const { Imported, ...chunkState } = chunk;
+      if (chunkState.hasLoaded) {
+        return <Imported {...rest} />;
       }
-      return <loaded.MyComponent {...props}/>;
-    }
-  });
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // success
-});
 
-test('render element without loading prop', async () => {
-  let LoadableMyComponent = Loadable({
-    loader: createLoader(400, () => ({ MyComponent })),
-    render: <CodeSplitRenderer />
-  });
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // success
-});
-
-test('loadable map success', async () => {
-  let LoadableMyComponent = Loadable.Map({
-    loader: {
-      a: createLoader(200, () => ({ MyComponent })),
-      b: createLoader(400, () => ({ MyComponent })),
-    },
-    loading: MyLoadingComponent,
-    render(loaded, props) {
-      return (
-        <div>
-          <loaded.a.MyComponent {...props}/>
-          <loaded.b.MyComponent {...props}/>
-        </div>
-      );
-    }
-  });
-
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // success
-});
-
-test('loadable map success without loading prop', async () => {
-    let LoadableMyComponent = Loadable.Map({
-      loader: {
-        a: createLoader(200, () => ({ MyComponent })),
-        b: createLoader(400, () => ({ MyComponent })),
-      },
-      render(state, props) {
-        const { loaded } = state;
-        return whenLoaded(state, () => (
-          <div>
-            <loaded.a.MyComponent {...props}/>
-            <loaded.b.MyComponent {...props}/>
-          </div>
-        ));
+      if (chunkState.error) {
+        return React.cloneElement(children, chunkState);
       }
-    });
 
-    let component = renderer.create(<LoadableMyComponent prop="baz" />);
+      return <div>MyLoadingComponent {JSON.stringify(chunkState)}</div>;
+    };
+
+    // Wrap the RetryChild with chunk HOC
+    let ChunkMyComponent = chunk(mockImport)(RetryChild);
+
+    // 'Child' component is required to enable '.reset()' to be invoked after error
+    const Child = (props) => (<div>{JSON.stringify(props)}</div>);
+
+    // Render
+    let component1 = renderer.create(<ChunkMyComponent prop="foo"><Child /></ChunkMyComponent>);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // error
+
+    component1.root.findByType(Child).props.retry();
+
+    expect(component1.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component1.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(100);
+    expect(component1.toJSON()).toMatchSnapshot(); // loaded
+  });
+
+
+  test('server side rendering', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => require('../__fixtures__/component')))(SingleImport);
+
+    await preloadAll();
+
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
+
+    expect(component.toJSON()).toMatchSnapshot(); // serverside
+  });
+
+  test('server side rendering es6', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => require('../__fixtures__/component.es6')))(SingleImport);
+
+    await preloadAll();
+
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
+
+    expect(component.toJSON()).toMatchSnapshot(); // serverside
+  });
+
+  test('preload', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))(SingleImport);
+
+    let promise = ChunkMyComponent.preload();
+    await waitFor(200);
+
+    let component1 = renderer.create(<ChunkMyComponent prop="bar" />);
+
+    expect(component1.toJSON()).toMatchSnapshot(); // still loading...
+    await promise;
+    expect(component1.toJSON()).toMatchSnapshot(); // success
+
+    let component2 = renderer.create(<ChunkMyComponent prop="baz" />);
+    expect(component2.toJSON()).toMatchSnapshot(); // success
+  });
+
+  test('render without wrapped component', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))();
+
+    let component = renderer.create(<ChunkMyComponent prop="foo" />);
     expect(component.toJSON()).toMatchSnapshot(); // initial
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // loading
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // success
-});
-
-test('loadable map element success without loading prop', async () => {
-  let LoadableMyComponent = Loadable.Map({
-    loader: {
-        a: createLoader(200, () => ({ MyComponent })),
-        b: createLoader(400, () => ({ MyComponent })),
-    },
-    render: <CodeSplitMapRenderer />
   });
 
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // success
-});
+  test('resolveDefaultImport with no wrapped component', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => ({ MyComponent })), {
+        resolveDefaultImport: imported => imported.MyComponent
+    })();
 
-test('loadable map error', async () => {
-  let LoadableMyComponent = Loadable.Map({
-    loader: {
-      a: createLoader(200, () => ({ MyComponent })),
-      b: createLoader(400, null, new Error('test error')),
-    },
-    loading: MyLoadingComponent,
-    render(loaded, props) {
-      return (
-        <div>
-          <loaded.a.MyComponent {...props}/>
-          <loaded.b.MyComponent {...props}/>
-        </div>
-      );
-    }
+    let component = renderer.create(<ChunkMyComponent prop="foo" />);
+    expect(component.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // success
   });
 
-  let component = renderer.create(<LoadableMyComponent prop="baz" />);
-  expect(component.toJSON()).toMatchSnapshot(); // initial
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // loading
-  await waitFor(200);
-  expect(component.toJSON()).toMatchSnapshot(); // error
-});
+  test('resolveDefaultImport', async () => {
+    let ChunkMyComponent = chunk(createLoader(400, () => ({ MyComponent })), {
+      resolveDefaultImport: imported => imported.MyComponent
+    })(SingleImport);
 
-test('loadable map error without loading prop', async () => {
-    let LoadableMyComponent = Loadable.Map({
-      loader: {
-        a: createLoader(200, () => ({ MyComponent })),
-        b: createLoader(400, null, new Error('test error')),
-      },
-      render(state, props) {
-        const { loaded } = state;
-        return whenLoaded(state, () => (
-          <div>
-            <loaded.a.MyComponent {...props}/>
-            <loaded.b.MyComponent {...props}/>
-          </div>
-        ));
+    let component = renderer.create(<ChunkMyComponent prop="foo" />);
+    expect(component.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // success
+  });
+
+  describe('opts.hoist: true', () => {
+    test('applies statics in render lifecycle', async () => {
+      const jestFn = jest.fn();
+      MyComponent.myStatic = jestFn;
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+
+      renderer.create(<ChunkMyComponent prop="foo" />);
+      expect(ChunkMyComponent.myStatic).toBeUndefined(); // initial
+      await waitFor(200);
+      expect(ChunkMyComponent.myStatic).toBeUndefined(); // loading
+      await waitFor(200);
+      expect(ChunkMyComponent.myStatic).toBe(jestFn); // success
+      delete MyComponent.myStatic;
+    });
+
+    test('applies statics when preloaded on server', async () => {
+      const jestFn = jest.fn();
+      MyComponent.myStatic = jestFn;
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+
+      await preloadAll();
+
+      expect(ChunkMyComponent.myStatic).toBe(jestFn);
+      delete MyComponent.myStatic;
+    });
+
+    test('does not apply statics on error', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error(); }), {
+        hoist: true
+      })();
+
+      renderer.create(<ChunkMyComponent prop="foo" />);
+      expect(ChunkMyComponent.myStatic).toBeUndefined(); // initial
+      await waitFor(200);
+      expect(ChunkMyComponent.myStatic).toBeUndefined(); // loading
+      await waitFor(200);
+      expect(ChunkMyComponent.myStatic).toBeUndefined(); // error
+      delete MyComponent.myStatic;
+    });
+
+    test('throws on server `preloadAll()` when import is invalid', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
+        hoist: true
+      })();
+
+      expect.assertions(1);
+      try {
+        await preloadAll();
+      } catch (e) {
+        expect(e.message).toEqual('import err');
       }
     });
 
-    let component = renderer.create(<LoadableMyComponent prop="baz" />);
+    test('throws on `preloadChunks()` when import is invalid', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
+        hoist: true
+      })();
+
+      expect.assertions(1);
+      try {
+        await preloadChunks([ChunkMyComponent.getLoader()]);
+      } catch (e) {
+        expect(e.message).toEqual('import err');
+      }
+    });
+
+    test('throws on static `preload()`', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
+        hoist: true
+      })();
+
+      expect.assertions(1);
+      try {
+        await ChunkMyComponent.preload();
+      } catch (e) {
+        expect(e.message).toEqual('import err');
+      }
+    });
+
+    test('`preloadChunks()` hoists statics before render', async () => {
+      const jestFn = jest.fn();
+      MyComponent.myStatic = jestFn;
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+
+      await preloadChunks([ChunkMyComponent.getLoader()]);
+
+      expect(ChunkMyComponent.myStatic).toBe(jestFn);
+      delete MyComponent.myStatic;
+    });
+  });
+});
+
+describe('chunks', () => {
+  test('missing component throws', async () => {
+    expect(() => chunks({a: createLoader(400, () => MyComponent)})()).toThrow();
+  });
+
+  test('missing import map throws', async () => {
+    expect(() => chunks(createLoader(400, () => MyComponent))).toThrow();
+  });
+
+  test('using hoist option throws', async () => {
+      expect(() => chunks({ a: createLoader(400, () => MyComponent)}, { hoist: true })).toThrow();
+  });
+
+  test('loads multiple imports', async () => {
+    let ChunkMyComponent = chunks({
+      a: createLoader(200, () => MyComponent),
+      _MyComponent: createLoader(400, () => ({MyComponent})),
+    })(MapImport);
+
+    let component = renderer.create(<ChunkMyComponent prop="baz"/>);
+    expect(component.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // success
+  });
+
+  test('renders error when import fails', async () => {
+    let ChunkMyComponent = chunks({
+      a: createLoader(200, () => MyComponent),
+      b: createLoader(400, null, new Error('test error'))
+    })(MapImport);
+
+    let component = renderer.create(<ChunkMyComponent prop="baz"/>);
     expect(component.toJSON()).toMatchSnapshot(); // initial
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // loading
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // error
+  });
+
+  test('resolveDefaultImport', async () => {
+    let ChunkMyComponent = chunks({
+      a: createLoader(200, () => ({ aComponent: MyComponent })),
+      b: createLoader(400, () => ({ bComponent: MyComponent })),
+    }, {
+      resolveDefaultImport: (imported, key) => imported[key + 'Component']
+    })(MapImport);
+
+    let component = renderer.create(<ChunkMyComponent prop="foo" />);
+    expect(component.toJSON()).toMatchSnapshot(); // initial
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // loading
+    await waitFor(200);
+    expect(component.toJSON()).toMatchSnapshot(); // success
+  });
 });
 
 describe('preloadReady', () => {
@@ -356,40 +459,33 @@ describe('preloadReady', () => {
   });
 
   test('undefined', async () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(200, () => MyComponent),
-      loading: MyLoadingComponent,
-    });
+    let ChunkMyComponent = chunk(createLoader(200, () => MyComponent))(SingleImport);
 
-    await Loadable.preloadReady();
+    await preloadReady();
 
-    let component = renderer.create(<LoadableMyComponent prop="baz" />);
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
 
     expect(component.toJSON()).toMatchSnapshot();
   });
 
   test('one', async () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(200, () => MyComponent),
-      loading: MyLoadingComponent,
-      webpack: () => [1],
-    });
+    let ChunkMyComponent = chunk(createLoader(200, () => MyComponent), {
+        webpack: () => [1]
+    })(SingleImport);
 
-    await Loadable.preloadReady();
+    await preloadReady();
 
-    let component = renderer.create(<LoadableMyComponent prop="baz" />);
+    let component = renderer.create(<ChunkMyComponent prop="baz" />);
 
     expect(component.toJSON()).toMatchSnapshot();
   });
 
   test('many', async () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(200, () => MyComponent),
-      loading: MyLoadingComponent,
+    let LoadableMyComponent = chunk(createLoader(200, () => MyComponent), {
       webpack: () => [1, 2],
-    });
+    })(SingleImport);
 
-    await Loadable.preloadReady();
+    await preloadReady();
 
     let component = renderer.create(<LoadableMyComponent prop="baz" />);
 
@@ -397,13 +493,11 @@ describe('preloadReady', () => {
   });
 
   test('missing', async () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(200, () => MyComponent),
-      loading: MyLoadingComponent,
+    let LoadableMyComponent = chunk(createLoader(200, () => MyComponent), {
       webpack: () => [1, 42],
-    });
+    })(SingleImport);
 
-    await Loadable.preloadReady();
+    await preloadReady();
 
     let component = renderer.create(<LoadableMyComponent prop="baz" />);
 
@@ -411,49 +505,58 @@ describe('preloadReady', () => {
   });
 
   test('delay with 0', () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(300, () => MyComponent),
-      loading: MyLoadingComponent,
+    let LoadableMyComponent = chunk(createLoader(300, () => MyComponent), {
       delay: 0,
       timeout: 200,
-    });
-  
+    })(SingleImport);
+
     let loadingComponent = renderer.create(<LoadableMyComponent prop="foo" />);
   
     expect(loadingComponent.toJSON()).toMatchSnapshot(); // loading
   });
 
-  test('getModules', () => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(300, () => MyComponent),
-      modules: ['./myModule']
-    });
-    expect(LoadableMyComponent.getModules()).toEqual(['./myModule']);
-  });
+  describe('hoist: true', function () {
+    test('applies statics when pre-loaded on client', async () => {
+      const jestFn = jest.fn();
+      MyComponent.myStatic = jestFn;
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), {
+        hoist: true,
+        webpack: () => [1, 2]
+      })();
 
-  test('getLoader', () => {
-    const componentLoader = createLoader(300, () => MyComponent);
-    let LoadableMyComponent = Loadable({
-      loader: componentLoader
-    });
-    expect(LoadableMyComponent.getLoader()).toBe(componentLoader);
-  });
+      await preloadReady();
 
-  test('preload', (done) => {
-    let LoadableMyComponent = Loadable({
-      loader: createLoader(200, () => MyComponent)
+      expect(ChunkMyComponent.myStatic).toBe(jestFn); // success
+      delete MyComponent.myStatic;
     });
 
-    let LoadableMapComponent = Loadable({
-      loader: {
-        myComponent: createLoader(400, () => MyComponent)
+    test('throws on client `preloadReady()` when import is invalid', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
+        hoist: true,
+        webpack: () => [1, 2]
+      })();
+
+      expect.assertions(1);
+      try {
+        await preloadReady();
+      } catch (e) {
+        expect(e.message).toEqual('import err');
       }
     });
+  });
+});
+
+test('preloadChunks', async () => {
+    let LoadableMyComponent = chunk(createLoader(300, () => MyComponent))(SingleImport);
+    let LoadableMapComponent = chunks({ MyComponent: createLoader(300, () => MyComponent) })(MapImport);
 
     const loaders = [LoadableMyComponent.getLoader(), LoadableMapComponent.getLoader()];
-    Loadable.preload(loaders).then((modules) => {
-      expect(modules).toHaveLength(2);
-      done();
-    });
-  });
+
+    await preloadChunks(loaders);
+
+    let chunkComponent = renderer.create(<LoadableMyComponent prop="baz" />);
+    let chunksComponent = renderer.create(<LoadableMapComponent prop="foo" />);
+
+    expect(chunkComponent.toJSON()).toMatchSnapshot();
+    expect(chunksComponent.toJSON()).toMatchSnapshot();
 });

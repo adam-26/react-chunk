@@ -1,11 +1,8 @@
 import React from 'react';
-import Loadable from 'react-loadable';
-import Loading from "./Loading";
+import { chunk, preloadChunks } from 'react-chunk';
+import ChunkRenderer from "./ChunkRenderer";
 
-const LoadableContent = Loadable({
-    loader: () => import(/* webpackChunkName: "PreLoadedContent" */ './PreLoadedContent'),
-    loading: Loading,
-});
+const ContentChunk = chunk(() => import(/* webpackChunkName: "PreLoadedContent" */ './PreLoadedContent'))(ChunkRenderer);
 
 // NOTE: This is for demo purposes only.
 //       Pre-loading a single module is no different than using a standard loadable
@@ -14,19 +11,22 @@ export default class PreLoadButton extends React.Component {
     isLoaded: false
   };
 
-  preloadModules() {
+  downloadChunks() {
     if (this.state.isLoaded) {
       return;
     }
 
     // Verify webpack only submits a single request
-    Loadable.preload([
-      LoadableContent.getLoader(),
-      LoadableContent.getLoader(),
-      LoadableContent.getLoader()
+    preloadChunks([
+      ContentChunk.getLoader(),
+      ContentChunk.getLoader(),
+      ContentChunk.getLoader()
     ]).then(() => {
       console.log('pre-loading modules');
       this.setState({ isLoaded: true });
+    }).catch(err => {
+      // on error, can allow user to retry
+      console.error(err);
     });
   }
 
@@ -35,8 +35,8 @@ export default class PreLoadButton extends React.Component {
     console.log('is content pre-loaded? ' + isLoaded);
     return (
       <div>
-        <button onClick={() => this.preloadModules()}>Preload Modules</button>
-        {isLoaded && <LoadableContent />}
+        <button onClick={() => this.downloadChunks()}>Preload Modules</button>
+        {isLoaded && <ContentChunk />}
       </div>
     );
   }

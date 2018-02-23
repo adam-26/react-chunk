@@ -4,8 +4,8 @@ const path = require('path');
 const url = require('url');
 
 function buildManifest(compiler, compilation, ignoreChunkNames) {
-  let context = compiler.options.context;
-  let manifest = {};
+  const context = compiler.options.context;
+  const manifest = {};
 
   compilation.chunks.forEach(chunk => {
     // Determine if the chunk should be ignored
@@ -22,9 +22,9 @@ function buildManifest(compiler, compilation, ignoreChunkNames) {
     if (!ignoreChunk) {
       chunk.files.forEach(file => {
         chunk.forEachModule(module => {
-          let id = module.id;
-          let name = typeof module.libIdent === 'function' ? module.libIdent({ context }) : null;
-          let publicPath = url.resolve(compilation.outputOptions.publicPath || '', file);
+          const id = module.id;
+          const name = typeof module.libIdent === 'function' ? module.libIdent({ context }) : null;
+          const publicPath = url.resolve(compilation.outputOptions.publicPath || '', file);
 
           let currentModule = module;
           if (module.constructor.name === 'ConcatenatedModule') {
@@ -43,7 +43,7 @@ function buildManifest(compiler, compilation, ignoreChunkNames) {
   return manifest;
 }
 
-class ReactLoadablePlugin {
+class ReactChunkPlugin {
   constructor(opts = {}) {
     this.filename = opts.filename;
     const ignoreChunkNames = opts.ignoreChunkNames || [];
@@ -53,7 +53,7 @@ class ReactLoadablePlugin {
   apply(compiler) {
     compiler.plugin('emit', (compilation, callback) => {
       const manifest = buildManifest(compiler, compilation, this.ignoreChunkNames);
-      var json = JSON.stringify(manifest, null, 2);
+      const json = JSON.stringify(manifest, null, 2);
       const outputDirectory = path.dirname(this.filename);
       try {
         fs.mkdirSync(outputDirectory);
@@ -68,11 +68,20 @@ class ReactLoadablePlugin {
   }
 }
 
-function getBundles(manifest, moduleIds) {
-  return moduleIds.reduce((bundles, moduleId) => {
-    return bundles.concat(manifest[moduleId]);
+function resolveChunks(manifest, chunkIds) {
+  const uniqueIds = chunkIds
+    .reduce((uniqueIds, chunkId) => {
+      if (uniqueIds.indexOf(chunkId) === -1) {
+        uniqueIds.push(chunkId);
+      }
+
+      return uniqueIds;
+    }, []);
+
+  return uniqueIds.reduce((bundles, chunkId) => {
+    return bundles.concat(manifest[chunkId]);
   }, []);
 }
 
-exports.ReactLoadablePlugin = ReactLoadablePlugin;
-exports.getBundles = getBundles;
+exports.ReactChunkPlugin = ReactChunkPlugin;
+exports.resolveChunks = resolveChunks;

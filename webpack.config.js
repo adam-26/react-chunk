@@ -1,5 +1,5 @@
 const path = require('path');
-const { ReactLoadablePlugin } = require('./webpack');
+const { ReactChunkPlugin } = require('./webpack');
 
 module.exports = {
   entry: {
@@ -27,6 +27,7 @@ module.exports = {
             plugins: [
               'syntax-dynamic-import',
               'transform-class-properties',
+              'transform-object-rest-spread',
               'transform-object-assign',
               require.resolve('./babel'),
             ],
@@ -38,12 +39,13 @@ module.exports = {
   devtool: 'inline-source-map',
   resolve: {
     alias: {
-      'react-loadable': path.resolve(__dirname, 'src'),
+      'react-chunk': path.resolve(__dirname, 'src'),
     },
   },
   plugins: [
-    new ReactLoadablePlugin({
-      filename:  path.resolve(__dirname, 'example', 'dist', 'react-loadable.json'),
+    new ReactChunkPlugin({
+      filename:  path.resolve(__dirname, 'example', 'dist', 'react-chunk.json'),
+      ignoreChunkNames: ['main']
     }),
   ]
 };

@@ -2,22 +2,23 @@ import express from 'express';
 import path from 'path';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import Loadable from 'react-loadable';
-import { getBundles } from 'react-loadable/webpack'
+import { preloadAll } from 'react-chunk';
+import { resolveChunks } from 'react-chunk/webpack'
+import ChunkRecorder from 'react-chunk/Recorder'
 import App from './components/App';
 
-const stats = require('./dist/react-loadable.json');
+const stats = require('./dist/react-chunk.json');
 const app = express();
 
 app.get('/', (req, res) => {
-  let modules = [];
+  let renderedChunks = [];
   let html = ReactDOMServer.renderToString(
-    <Loadable.Capture report={moduleName => modules.push(moduleName)}>
+    <ChunkRecorder addChunk={chunkName => renderedChunks.push(chunkName) }>
       <App/>
-    </Loadable.Capture>
+    </ChunkRecorder>
   );
 
-  let bundles = getBundles(stats, modules);
+  let bundles = resolveChunks(stats, renderedChunks);
 
   let styles = bundles.filter(bundle => bundle.file.endsWith('.css'));
   let scripts = bundles.filter(bundle => bundle.file.endsWith('.js'));
@@ -48,7 +49,7 @@ app.get('/', (req, res) => {
 
 app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
-Loadable.preloadAll().then(() => {
+preloadAll().then(() => {
   app.listen(3000, () => {
     console.log('Running on http://localhost:3000/');
   });
