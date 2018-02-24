@@ -359,7 +359,7 @@ describe('chunk', () => {
 
       expect.assertions(1);
       try {
-        await preloadChunks([ChunkMyComponent.getLoader()]);
+        await preloadChunks([ChunkMyComponent.getChunkLoader()]);
       } catch (e) {
         expect(e.message).toEqual('import err');
       }
@@ -383,7 +383,7 @@ describe('chunk', () => {
       MyComponent.myStatic = jestFn;
       let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
 
-      await preloadChunks([ChunkMyComponent.getLoader()]);
+      await preloadChunks([ChunkMyComponent.getChunkLoader()]);
 
       expect(ChunkMyComponent.myStatic).toBe(jestFn);
       delete MyComponent.myStatic;
@@ -550,7 +550,7 @@ test('preloadChunks', async () => {
     let LoadableMyComponent = chunk(createLoader(300, () => MyComponent))(SingleImport);
     let LoadableMapComponent = chunks({ MyComponent: createLoader(300, () => MyComponent) })(MapImport);
 
-    const loaders = [LoadableMyComponent.getLoader(), LoadableMapComponent.getLoader()];
+    const loaders = [LoadableMyComponent.getChunkLoader(), LoadableMapComponent.getChunkLoader()];
 
     await preloadChunks(loaders);
 
