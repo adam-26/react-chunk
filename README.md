@@ -15,9 +15,10 @@ _Code splitting with minimal boiler plate_
 
 _This is a fork of [react-loadable](https://github.com/jamiebuilds/react-loadable), differences and new features include:_
  * _A modified API to support new features_
+ * _Full render control using a HOC wrapped component_
  * _Improved re-use of import components_
  * _Improved support for route code splitting_
- * _Preloading all chunks required to render an entire route_
+ * _Pre-loading all chunks required to render an entire route_
  * _Option to _hoist_ static methods of imported components_
  * _Option to enable retry support with backoff_
  * _Manually invoking a retry after timeout or error_
@@ -194,6 +195,8 @@ best for your app.
 ### Naming webpack chunks
 
 Its often useful to assign _names_ to webpack chunks. This can be achieved easily using inline code comments.
+
+Be aware that naming chunks **impacts how webpack bundles your code**. You should [read about webpack code splitting](https://webpack.js.org/guides/code-splitting/#dynamic-imports).
 
 ```js
 import { chunk, chunks } from 'react-chunk';
@@ -402,8 +405,8 @@ const FooChunk = chunk(() => import('./Foo'))();
 const BarChunk = chunk(() => import('./Bar'))();
 
 preloadChunks([
-  FooChunk.getLoader(),
-  BarChunk.getLoader(),
+  FooChunk.getChunkLoader(),
+  BarChunk.getChunkLoader(),
 ]).then(() => {
   // use 'setState()' to render using the loaded components
 }).catch(err => {
@@ -741,14 +744,14 @@ resolve to update your UI. In most cases it creates a bad user experience.
 
 [Read more about preloading](#preloading).
 
-#### `getLoader()`
+#### `getChunkLoader()`
 
 This is a static method that can be used to obtain a reference to the components loader. It should be used in conjuntion with [preloadChunks()](#preloadchunks)
 
 ```js
 const ChunkComponent = chunk({...});
 
-ChunkComponent.getLoader();
+ChunkComponent.getChunkLoader();
 ```
 
 
@@ -1152,10 +1155,11 @@ res.send(`
     </head>
     <body>
       <div id="app">${html}</div>
-      <script src="/dist/main.js"></script>
+      <script src="/dist/manifest.js"></script>
       ${scripts.map(script => {
         return `<script src="/dist/${script.file}"></script>`
       }).join('\n')}
+      <script src="/dist/main.js"></script>
     </body>
   </html>
 `);

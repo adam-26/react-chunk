@@ -18,9 +18,9 @@ export default class PreLoadButton extends React.Component {
 
     // Verify webpack only submits a single request
     preloadChunks([
-      ContentChunk.getLoader(),
-      ContentChunk.getLoader(),
-      ContentChunk.getLoader()
+      ContentChunk.getChunkLoader(),
+      ContentChunk.getChunkLoader(),
+      ContentChunk.getChunkLoader()
     ]).then(() => {
       console.log('pre-loading modules');
       this.setState({ isLoaded: true });

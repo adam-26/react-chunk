@@ -194,7 +194,7 @@ function createChunkComponent(loadFn, options) {
         return init(true);
       }
 
-      static getLoader() {
+      static getChunkLoader() {
         return init;
       }
 
