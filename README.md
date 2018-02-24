@@ -374,7 +374,7 @@ class MyComponent extends React.Component {
   };
 
   onMouseOver = () => {
-    BarChunk.preload();
+    BarChunk.preloadChunk();
   };
 
   render() {
@@ -729,14 +729,14 @@ Props passed to this component will be passed straight through to the
 wrapped component, in additional to a `chunk` prop that includes all data required for rendering the imported resources.
 
 ### Common `chunk` and `chunks` static methods
-#### `preload()`
+#### `preloadChunk()`
 
 This is a static method that can be used to load the component ahead of time.
 
 ```js
 const ChunkComponent = chunk({...});
 
-ChunkComponent.preload();
+ChunkComponent.preloadChunk();
 ```
 
 This returns a promise, but you should avoid waiting for that promise to
