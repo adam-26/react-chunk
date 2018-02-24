@@ -1,6 +1,6 @@
 {
   "name": "react-chunk",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "A higher order component for dynamically importing components, forked from react-loadable.",
   "main": "lib/index.js",
   "author": "adam-26",

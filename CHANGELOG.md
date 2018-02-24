@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.0.0"></a>
+# [7.0.0](https://github.com/adam-26/react-chunk/compare/v1.2.0...v7.0.0) (2018-02-24)
+
+
+### Bug Fixes
+
+* **build:** Conflicting tags ([58ee9b0](https://github.com/adam-26/react-chunk/commit/58ee9b0))
+* **build:** Conflicting tags  ([#6](https://github.com/adam-26/react-chunk/issues/6)) ([36da69d](https://github.com/adam-26/react-chunk/commit/36da69d))
+
+
+### Features
+
+* **api:** rename `hoist` -> `hoistStatics` ([7cf4108](https://github.com/adam-26/react-chunk/commit/7cf4108))
+* **api:** rename `hoist` -> `hoistStatics` ([#5](https://github.com/adam-26/react-chunk/issues/5)) ([ff8cd16](https://github.com/adam-26/react-chunk/commit/ff8cd16))
+
+
+### BREAKING CHANGES
+
+* **api:** - change option name
+* **api:** - change option name
+
+
+
 <a name="1.2.0"></a>
 # [1.2.0](https://github.com/adam-26/react-chunk/compare/v1.1.0...v1.2.0) (2018-02-24)
 
