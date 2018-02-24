@@ -1,5 +1,7 @@
 # react-chunk
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/adam-26/react-chunk.svg)](https://greenkeeper.io/)
+
 _Code splitting with minimal boiler plate_
 
 > A higher order component for loading components with dynamic imports.
