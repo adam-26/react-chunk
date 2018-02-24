@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.0.1"></a>
+## [7.0.1](https://github.com/adam-26/react-chunk/compare/v7.0.0...v7.0.1) (2018-02-24)
+
+
+### Bug Fixes
+
+* **api:** rename preload ([65b8c48](https://github.com/adam-26/react-chunk/commit/65b8c48))
+* **api:** rename preload ([#7](https://github.com/adam-26/react-chunk/issues/7)) ([93104ef](https://github.com/adam-26/react-chunk/commit/93104ef))
+
+
+
 <a name="7.0.0"></a>
 # [7.0.0](https://github.com/adam-26/react-chunk/compare/v1.2.0...v7.0.0) (2018-02-24)
 
