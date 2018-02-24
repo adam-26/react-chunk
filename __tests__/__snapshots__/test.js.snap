@@ -1,155 +1,390 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`delay and timeout 1`] = `
+exports[`chunk delay and timeout 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`delay and timeout 2`] = `
+exports[`chunk delay and timeout 2`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`delay and timeout 3`] = `
+exports[`chunk delay and timeout 3`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":true,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":true,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`delay and timeout 4`] = `
+exports[`chunk delay and timeout 4`] = `
 <div>
   MyComponent 
   {"prop":"foo"}
 </div>
 `;
 
-exports[`loadable map error 1`] = `
+exports[`chunk loading error 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`loadable map error 2`] = `
+exports[`chunk loading error 2`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`loadable map error 3`] = `
+exports[`chunk loading error 3`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":false,"pastDelay":true,"timedOut":false,"error":{}}
+  {"isLoading":false,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":{},"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`loadable map success 1`] = `
+exports[`chunk loading success 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`loadable map success 2`] = `
+exports[`chunk loading success 2`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`loadable map success 3`] = `
-<div>
-  <div>
-    MyComponent 
-    {"prop":"baz"}
-  </div>
-  <div>
-    MyComponent 
-    {"prop":"baz"}
-  </div>
-</div>
-`;
-
-exports[`loading error 1`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`loading error 2`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`loading error 3`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":false,"pastDelay":true,"timedOut":false,"error":{}}
-</div>
-`;
-
-exports[`loading success 1`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`loading success 2`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`loading success 3`] = `
+exports[`chunk loading success 3`] = `
 <div>
   MyComponent 
   {"prop":"foo"}
 </div>
 `;
 
-exports[`loading success 4`] = `
+exports[`chunk loading success 4`] = `
 <div>
   MyComponent 
   {"prop":"bar"}
 </div>
 `;
 
-exports[`preload 1`] = `
+exports[`chunk preload 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`preload 2`] = `
+exports[`chunk preload 2`] = `
+<div>
+  MyComponent 
+  {"prop":"bar"}
+</div>
+`;
+
+exports[`chunk preload 3`] = `
 <div>
   MyComponent 
   {"prop":"baz"}
 </div>
 `;
 
-exports[`preload 3`] = `
+exports[`chunk render 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk render 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk render 3`] = `
 <div>
   MyComponent 
   {"prop":"baz"}
+</div>
+`;
+
+exports[`chunk render without wrapped component 1`] = `null`;
+
+exports[`chunk render without wrapped component 2`] = `null`;
+
+exports[`chunk render without wrapped component 3`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunk resolveDefaultImport 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk resolveDefaultImport 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk resolveDefaultImport 3`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunk resolveDefaultImport with no wrapped component 1`] = `null`;
+
+exports[`chunk resolveDefaultImport with no wrapped component 2`] = `null`;
+
+exports[`chunk resolveDefaultImport with no wrapped component 3`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunk retry after error 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retry after error 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retry after error 3`] = `
+<div>
+  {"isLoading":false,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":{},"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retry after error 4`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retry after error 5`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retry after error 6`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunk retryBackOff 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retryBackOff 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retryBackOff 3`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retryBackOff 4`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk retryBackOff 5`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunk server side rendering 1`] = `
+<div>
+  fixture1
+</div>
+`;
+
+exports[`chunk server side rendering es6 1`] = `
+<div>
+  fixture2
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 3`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 4`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 5`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":true,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk timeout and retryBackOff 6`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
+</div>
+`;
+
+exports[`chunks loads multiple imports 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks loads multiple imports 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks loads multiple imports 3`] = `
+Array [
+  <div>
+    MyComponent 
+    {"prop":"baz"}
+  </div>,
+  <div>
+    MyComponent 
+    {"prop":"baz"}
+  </div>,
+]
+`;
+
+exports[`chunks renders error when import fails 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks renders error when import fails 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks renders error when import fails 3`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":false,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":{},"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks resolveDefaultImport 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks resolveDefaultImport 2`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":{},"importKeys":[]}
+</div>
+`;
+
+exports[`chunks resolveDefaultImport 3`] = `
+Array [
+  <div>
+    MyComponent 
+    {"prop":"foo"}
+  </div>,
+  <div>
+    MyComponent 
+    {"prop":"foo"}
+  </div>,
+]
+`;
+
+exports[`preloadChunks 1`] = `
+<div>
+  MyComponent 
+  {"prop":"baz"}
+</div>
+`;
+
+exports[`preloadChunks 2`] = `
+<div>
+  MyComponent 
+  {"prop":"foo"}
 </div>
 `;
 
 exports[`preloadReady delay with 0 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":true,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
@@ -163,7 +398,7 @@ exports[`preloadReady many 1`] = `
 exports[`preloadReady missing 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
@@ -177,39 +412,6 @@ exports[`preloadReady one 1`] = `
 exports[`preloadReady undefined 1`] = `
 <div>
   MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`render 1`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":false,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`render 2`] = `
-<div>
-  MyLoadingComponent 
-  {"isLoading":true,"pastDelay":true,"timedOut":false,"error":null}
-</div>
-`;
-
-exports[`render 3`] = `
-<div>
-  MyComponent 
-  {"prop":"baz"}
-</div>
-`;
-
-exports[`server side rendering 1`] = `
-<div>
-  fixture1
-</div>
-`;
-
-exports[`server side rendering es6 1`] = `
-<div>
-  fixture2
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;

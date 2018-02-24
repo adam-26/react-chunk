@@ -1,14 +1,11 @@
 import React from 'react';
-import Loadable from 'react-loadable';
-import Loading from './Loading';
-import delay from '../utils/delay';
-import path from 'path';
+import { chunk } from 'react-chunk';
+import ChunkRenderer from './ChunkRenderer';
 
-const LoadableExample = Loadable({
-  loader: () => import('./Example'),
-  loading: Loading,
-});
+const AppChunk = chunk(() => import(/* webpackChunkName: "App" */ './Example'), {
+  delay: 250
+})(ChunkRenderer);
 
 export default function App() {
-  return <LoadableExample/>;
+  return <AppChunk/>;
 }
