@@ -18,10 +18,10 @@ app.get('/', (req, res) => {
     </ChunkRecorder>
   );
 
-  let bundles = resolveChunks(stats, renderedChunks);
+  let resources = resolveChunks(stats, renderedChunks);
 
-  let styles = bundles.filter(bundle => bundle.file.endsWith('.css'));
-  let scripts = bundles.filter(bundle => bundle.file.endsWith('.js'));
+  let styles = resources.filter(bundle => bundle.file.endsWith('.css'));
+  let scripts = resources.filter(bundle => bundle.file.endsWith('.js'));
 
   res.send(`
     <!doctype html>
@@ -37,10 +37,11 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <div id="app">${html}</div>
-        <script src="/dist/main.js"></script>
+        <script src="/dist/manifest.js"></script>
         ${scripts.map(script => {
           return `<script src="/dist/${script.file}"></script>`
         }).join('\n')}
+        <script src="/dist/main.js"></script>
         <script>window.main();</script>
       </body>
     </html>

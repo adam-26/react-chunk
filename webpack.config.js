@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const { ReactChunkPlugin } = require('./webpack');
 
 module.exports = {
@@ -43,9 +44,13 @@ module.exports = {
     },
   },
   plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'manifest',
+      minChunks: Infinity
+    }),
     new ReactChunkPlugin({
       filename:  path.resolve(__dirname, 'example', 'dist', 'react-chunk.json'),
       ignoreChunkNames: ['main']
-    }),
+    })
   ]
 };
