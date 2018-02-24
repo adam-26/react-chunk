@@ -9,6 +9,7 @@ const READY_INITIALIZERS = [];
 const TIMEOUT_ERR = '_t';
 
 function isWebpackReady(getModuleIds) {
+  // eslint-disable-next-line no-undef
   if (typeof __webpack_modules__ !== 'object') {
     return false;
   }
@@ -16,6 +17,7 @@ function isWebpackReady(getModuleIds) {
   return getModuleIds().every(moduleId => {
     return (
       typeof moduleId !== 'undefined' &&
+      // eslint-disable-next-line no-undef
       typeof __webpack_modules__[moduleId] !== 'undefined'
     );
   });
@@ -164,11 +166,11 @@ function createChunkComponent(loadFn, options) {
   }
 
   return (WrappedComponent) => {
-      if (!opts.singleImport && typeof WrappedComponent === 'undefined') {
-        throw new Error('`chunks({..})([missing])` requires a component to wrap.');
-      }
+    if (!opts.singleImport && typeof WrappedComponent === 'undefined') {
+      throw new Error('`chunks({..})([missing])` requires a component to wrap.');
+    }
 
-      class ChunkComponent extends React.Component {
+    class ChunkComponent extends React.Component {
       constructor(props) {
         super(props);
         init(false);
@@ -241,7 +243,7 @@ function createChunkComponent(loadFn, options) {
 
         res.promise.then(() => {
           update();
-        }).catch(err => {
+        }).catch((/* err */) => {
           update();
         });
       }
@@ -290,6 +292,7 @@ function createChunkComponent(loadFn, options) {
       }
 
       render() {
+        // eslint-disable-next-line no-unused-vars
         const { chunks, ...passThroughProps } = this.props;
         const importState = {
           isLoading: this.state.loading,
@@ -363,37 +366,37 @@ function createChunkComponent(loadFn, options) {
     }
 
     function init(throwOnImportError) {
-        if (!res) {
-          res = loadFn(opts.loader, {
-            retryBackOff: Array.isArray(opts.retryBackOff) ? opts.retryBackOff : [],
-            importTimeoutMs: importTimeoutMs,
-            throwOnImportError: throwOnImportError
+      if (!res) {
+        res = loadFn(opts.loader, {
+          retryBackOff: Array.isArray(opts.retryBackOff) ? opts.retryBackOff : [],
+          importTimeoutMs: importTimeoutMs,
+          throwOnImportError: throwOnImportError
+        });
+      }
+
+      if (opts.hoist) {
+        res.promise = res.promise
+          .then(() => { hoistStatics(); })
+          .catch(err => {
+            if (throwOnImportError === true) {
+              // When pre-loading, any loader errors will be thrown immediately (ie: hoist, timeout options)
+              // - hoisting implies use of static methods, which need to be available prior to rendering.
+              throw err;
+            }
           });
-        }
+      }
 
-        if (opts.hoist) {
-          res.promise = res.promise
-            .then(() => { hoistStatics(); })
-            .catch(err => {
-              if (throwOnImportError === true) {
-                // When pre-loading, any loader errors will be thrown immediately (ie: hoist, timeout options)
-                // - hoisting implies use of static methods, which need to be available prior to rendering.
-                throw err;
-              }
-            });
-        }
-
-        return res.promise;
+      return res.promise;
     }
 
     ALL_INITIALIZERS.push(init);
 
     if (typeof opts.webpack === 'function') {
-        READY_INITIALIZERS.push((throwOnImportError) => {
-            if (isWebpackReady(opts.webpack)) {
-                return init(throwOnImportError);
-            }
-        });
+      READY_INITIALIZERS.push((throwOnImportError) => {
+        if (isWebpackReady(opts.webpack)) {
+          return init(throwOnImportError);
+        }
+      });
     }
 
     // Hoist any statics on the wrapped component
@@ -422,28 +425,28 @@ function chunks(dynamicImport, opts = {}, webpackOpts = {}) {
 }
 
 function flushInitializers(initializers) {
-    let promises = [];
+  let promises = [];
 
-    while (initializers.length) {
-        let init = initializers.pop();
-        promises.push(init(true));
+  while (initializers.length) {
+    let init = initializers.pop();
+    promises.push(init(true));
+  }
+
+  return Promise.all(promises).then(() => {
+    if (initializers.length) {
+      return flushInitializers(initializers);
     }
-
-    return Promise.all(promises).then(() => {
-        if (initializers.length) {
-            return flushInitializers(initializers);
-        }
-    });
+  });
 }
 
 function preloadChunks(loaders) {
-    return new Promise((resolve, reject) => {
-        return flushInitializers(loaders).then(resolve, reject);
-    });
+  return new Promise((resolve, reject) => {
+    return flushInitializers(loaders).then(resolve, reject);
+  });
 }
 
 function preloadAll() {
-    return preloadChunks(ALL_INITIALIZERS);
+  return preloadChunks(ALL_INITIALIZERS);
 }
 
 function preloadReady() {
@@ -466,9 +469,9 @@ function withChunks(Component) {
       const { chunks } = this.context;
       return React.createElement(Component, {
         ...this.props,
-          chunks: {
-            addChunk: (chunks && chunks.addChunk) || noop
-          }
+        chunks: {
+          addChunk: (chunks && chunks.addChunk) || noop
+        }
       });
     }
   }

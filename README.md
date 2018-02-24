@@ -5,6 +5,14 @@ _Code splitting with minimal boiler plate_
 > A higher order component for loading components with dynamic imports.
 
 
+[![npm](https://img.shields.io/npm/v/react-chunk.svg)](https://www.npmjs.com/package/react-chunk)
+[![npm](https://img.shields.io/npm/dm/react-chunk.svg)](https://www.npmjs.com/package/react-chunk)
+[![CircleCI branch](https://img.shields.io/circleci/project/github/adam-26/react-chunk/master.svg)](https://circleci.com/gh/adam-26/react-chunk/tree/master)
+[![Code Climate](https://img.shields.io/codeclimate/coverage/github/adam-26/react-chunk.svg)](https://codeclimate.com/github/adam-26/react-chunk)
+[![Code Climate](https://img.shields.io/codeclimate/github/adam-26/react-chunk.svg)](https://codeclimate.com/github/adam-26/react-chunk)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
+
 _This is a fork of [react-loadable](https://github.com/jamiebuilds/react-loadable), differences and new features include:_
  * _A modified API to support new features_
  * _Improved re-use of import components_
@@ -119,16 +127,25 @@ The **order** of plugins is important.
 
 #### Webpack
 
-The webpack plugin will write the chunk module data to a file required for server-side rendering.
+The react-chunk webpack plugin will write the chunk module data to a file required for server-side rendering.
 
-Add the plugin to your _client_ webpack plugins
+The webpack `CommonsChunkPlugin` is required to allow non entry point chunks to be pre-loaded on the client.
+
+Add the plugins to your _client_ webpack plugins
 
 ```js
+import webpack from 'webpack';
 import { ReactChunkPlugin } from 'react-chunk/webpack';
 
 plugins: [
+
   new ReactChunkPlugin({
     filename: path.join(__dirname, 'dist', 'react-chunk.json')
+  }),
+
+  new webpack.optimize.CommonsChunkPlugin({
+    name: 'manifest',
+    minChunks: Infinity
   })
 ]
 
@@ -341,7 +358,7 @@ For example, if you need to load a new component when a button gets pressed,
 you could start preloading the component when the user hovers over the button.
 
 The components created by `chunk` and `chunks` expose a
-[static `preload` method](#loadablecomponentpreload) which does exactly this.
+[static `preload` method](#chunkcomponentpreload) which does exactly this.
 
 ```js
 const BarChunk = chunk(() => import('./Bar'))();
@@ -507,7 +524,8 @@ export default {
 }
 ```
 
-Ensure the `manifest.js` is loaded before all other webpack scripts.
+* Ensure the `manifest.js` is loaded **before** all other webpack scripts.
+* Ensure the main entry point (in this example, `main.js`) is loaded **after** all other webpack scripts.
 
 ```js
 let resources = getBundles(chunkData, renderedChunks);
@@ -525,10 +543,16 @@ res.send(`
     </head>
     <body>
       <div id="app">${html}</div>
+
+      <!-- Load the manifest FIRST -->
       <script src="/dist/manifest.js"></script>
+
+      <!-- Then, load all resolved scripts -->
       ${scripts.map(bundle => {
         return `<script src="/dist/${bundle.file}"></script>`
       }).join('\n')}
+
+      <!-- Load the main entry point LAST -->
       <script src="/dist/main.js"></script>
     </body>
   </html>
@@ -743,9 +767,9 @@ function WrappedComponent(props) {
       error,
       retry,
       loaded,
+      importKeys,
       Imported // - only for 'chunk()'
       // imported - only for 'chunks()'
-      // importKeys - only for 'chunks()'
     },
     ...restProps
   } = prop;
@@ -778,6 +802,33 @@ function WrappedComponent(props) {
 
 [Read more about loading components](#creating-a-great-loading-component)
 
+#### `chunk.Imported: mixed`
+> Note the UPPER CASE 'i'
+>
+> This prop is **only** passed to `chunk` components.
+
+It provides access to the [default export](#optsresolveDefaultImport) of the `import`ed resource.
+
+It is **only** populated when `chunk.hasLoaded` is `true`.
+
+#### `chunk.imported: Object`
+> Note the LOWER CASE 'i'
+>
+> This prop is **only** passed to `chunks` components.
+
+It provides access to the [default export](#optsresolveDefaultImport) of the all `import`ed resource, by key.
+
+It is **only** populated when `chunk.hasLoaded` is `true`.
+
+
+#### `chunk.importKeys: Array<string>`
+
+For `chunks()`, an array of the key names used for imports.
+
+For `chunk()`, it will always be an empty array
+
+> This can be used to create a generic rendering component that can be used to render both `chunk()` and `chunks()` components.
+
 #### `chunk.isLoading: boolean`
 
 `true` if the import(s) are currently being loaded, otherwise `false`.
@@ -791,8 +842,8 @@ function WrappedComponent(props) {
 A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) when the loading resource(s) has failed.
 
 ```js
-function LoadingComponent(props) {
-  if (props.error) {
+function WrappedComponent({chunk}) {
+  if (chunk.error) {
     return <div>Error!</div>;
   } else {
     return <div>Loading...</div>;
@@ -808,8 +859,8 @@ A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) after a set
 [`timeout`](#optstimeout).
 
 ```js
-function LoadingComponent(props) {
-  if (props.timedOut) {
+function WrappedComponent({chunk}) {
+  if (chunk.timedOut) {
     return <div>Taking a long time...</div>;
   } else {
     return <div>Loading...</div>;
@@ -825,8 +876,8 @@ A boolean prop passed to [`WrappedComponent`](#wrappedcomponent) after a set
 [`delay`](#optsdelay).
 
 ```js
-function LoadingComponent(props) {
-  if (props.pastDelay) {
+function WrappedComponent({chunk}) {
+  if (chunk.pastDelay) {
     return <div>Loading...</div>;
   } else {
     return null;
@@ -835,6 +886,10 @@ function LoadingComponent(props) {
 ```
 
 [Read more about delays](#avoiding-flash-of-loading-component).
+
+#### `chunk.loaded: mixed`
+
+This is considered a "low-level" API property, the `loaded` prop provides _raw_ access to all imported resources. This can be used in scenarios where an imported resource includes multiple exports that you need to access.
 
 ### `preloadAll()`
 
@@ -860,7 +915,7 @@ rendered.
 
 ```js
 // During module initialization...
-const LoadableComponent = chunk(...);
+const ChunkComponent = chunk(...);
 
 class MyComponent extends React.Component {
   componentDidMount() {
@@ -877,7 +932,7 @@ class MyComponent extends React.Component {
 class MyComponent extends React.Component {
   componentDidMount() {
     // During app render...
-    const LoadableComponent = chunk(...);
+    const ChunkComponent = chunk(...);
   }
 }
 ```

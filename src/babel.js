@@ -1,6 +1,6 @@
 const PKG_NAME = 'react-chunk';
 
-export default function({ types: t, template }) {
+export default function({ types: t }) {
   return {
     visitor: {
       ImportDeclaration(path) {
@@ -54,7 +54,7 @@ export default function({ types: t, template }) {
 
             // webpack options have been manually applied
             if (propertiesMap.webpack) {
-                return;
+              return;
             }
 
             // identify all import() statements

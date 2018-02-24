@@ -12,12 +12,12 @@ export default function ChunksRenderer(props) {
     timedOut,
     pastDelay,
     error,
-    isLoaded,
+    hasLoaded,
     imported,
     importKeys
   } = chunk;
 
-  if (isLoaded) {
+  if (hasLoaded) {
     if (children) {
       return React.cloneElement(children, { ...passThroughProps, chunk })
     }

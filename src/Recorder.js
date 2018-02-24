@@ -5,6 +5,10 @@ import PropTypes from 'prop-types';
 class ChunkRecorder extends React.Component {
   static propTypes = {
     addChunk: PropTypes.func.isRequired,
+    children: PropTypes.oneOfType([
+      PropTypes.node,
+      PropTypes.func
+    ]).isRequired
   };
 
   static childContextTypes = {
@@ -22,7 +26,7 @@ class ChunkRecorder extends React.Component {
   }
 
   render() {
-      return React.Children.only(this.props.children);
+    return React.Children.only(this.props.children);
   }
 }
 
