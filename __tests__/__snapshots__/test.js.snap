@@ -77,21 +77,21 @@ exports[`chunk loading success 4`] = `
 </div>
 `;
 
-exports[`chunk preload 1`] = `
+exports[`chunk preloadChunk 1`] = `
 <div>
   MyLoadingComponent 
   {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
 </div>
 `;
 
-exports[`chunk preload 2`] = `
+exports[`chunk preloadChunk 2`] = `
 <div>
   MyComponent 
   {"prop":"bar"}
 </div>
 `;
 
-exports[`chunk preload 3`] = `
+exports[`chunk preloadChunk 3`] = `
 <div>
   MyComponent 
   {"prop":"baz"}

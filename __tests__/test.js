@@ -246,10 +246,10 @@ describe('chunk', () => {
     expect(component.toJSON()).toMatchSnapshot(); // serverside
   });
 
-  test('preload', async () => {
+  test('preloadChunk', async () => {
     let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))(SingleImport);
 
-    let promise = ChunkMyComponent.preload();
+    let promise = ChunkMyComponent.preloadChunk();
     await waitFor(200);
 
     let component1 = renderer.create(<ChunkMyComponent prop="bar" />);
@@ -366,14 +366,14 @@ describe('chunk', () => {
       }
     });
 
-    test('throws on static `preload()`', async () => {
+    test('throws on static `preloadChunk()`', async () => {
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
         hoistStatics: true
       })();
 
       expect.assertions(1);
       try {
-        await ChunkMyComponent.preload();
+        await ChunkMyComponent.preloadChunk();
       } catch (e) {
         expect(e.message).toEqual('import err');
       }

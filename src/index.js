@@ -190,7 +190,7 @@ function createChunkComponent(loadFn, options) {
         })
       };
 
-      static preload() {
+      static preloadChunk() {
         return init(true);
       }
 
