@@ -8,8 +8,8 @@ _Code splitting with minimal boiler plate_
 [![npm](https://img.shields.io/npm/v/react-chunk.svg)](https://www.npmjs.com/package/react-chunk)
 [![npm](https://img.shields.io/npm/dm/react-chunk.svg)](https://www.npmjs.com/package/react-chunk)
 [![CircleCI branch](https://img.shields.io/circleci/project/github/adam-26/react-chunk/master.svg)](https://circleci.com/gh/adam-26/react-chunk/tree/master)
-[![Code Climate](https://img.shields.io/codeclimate/coverage/github/adam-26/react-chunk.svg)](https://codeclimate.com/github/adam-26/react-chunk)
-[![Code Climate](https://img.shields.io/codeclimate/github/adam-26/react-chunk.svg)](https://codeclimate.com/github/adam-26/react-chunk)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/d805355d2fe47d351663/test_coverage)](https://codeclimate.com/github/adam-26/react-chunk/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/d805355d2fe47d351663/maintainability)](https://codeclimate.com/github/adam-26/react-chunk/maintainability)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 
@@ -638,11 +638,11 @@ This returns a [ChunksComponent](#chunkscomponent). The `WrappedComponent` for a
 
 The react display name to assign when creating the HOC.
 
-#### `opts.hoist: boolean`
+#### `opts.hoistStatics: boolean`
 
 `true` to _hoist_ non-react static methods of the imported component to the HOC. Defaults to `false`.
 
-Note that the static methods are only hoisted after the component is loaded (obviously) - if you're using `hoist: true` on a component its _recommended_ that you `preload` (or `preloadChunks`) the component to avoid invoking static methods that have not yet been assigned to the HOC.
+Note that the static methods are only hoisted after the component is loaded (obviously) - if you're using `hoistStatics: true` on a component its _recommended_ that you `preload` (or `preloadChunks`) the component to avoid invoking static methods that have not yet been assigned to the HOC.
 
 Using this option with `chunks` is not supported and will result in an error.
 

@@ -146,7 +146,7 @@ function createChunkComponent(loadFn, options) {
   let opts = Object.assign({
     displayName: null,
     loader: null,
-    hoist: false,
+    hoistStatics: false,
     resolveDefaultImport: (imported /*, importKey */) => resolve(imported),
     retryBackOff: [],
     delay: 200,
@@ -353,7 +353,7 @@ function createChunkComponent(loadFn, options) {
 
     let _hoisted = false;
     function hoistStatics() {
-      if (_hoisted || !opts.hoist) {
+      if (_hoisted || !opts.hoistStatics) {
         return;
       }
 
@@ -374,12 +374,12 @@ function createChunkComponent(loadFn, options) {
         });
       }
 
-      if (opts.hoist) {
+      if (opts.hoistStatics) {
         res.promise = res.promise
           .then(() => { hoistStatics(); })
           .catch(err => {
             if (throwOnImportError === true) {
-              // When pre-loading, any loader errors will be thrown immediately (ie: hoist, timeout options)
+              // When pre-loading, any loader errors will be thrown immediately (ie: hoistStatics, timeout options)
               // - hoisting implies use of static methods, which need to be available prior to rendering.
               throw err;
             }
@@ -417,8 +417,8 @@ function chunks(dynamicImport, opts = {}, webpackOpts = {}) {
     throw new Error('`chunks()` requires a map of import functions.');
   }
 
-  if (typeof opts.hoist !== 'undefined') {
-    throw new Error('`chunks()` does not support the "hoist" option.');
+  if (typeof opts.hoistStatics !== 'undefined') {
+    throw new Error('`chunks()` does not support the "hoistStatics" option.');
   }
 
   return createChunkComponent(loadMap, {...webpackOpts, ...opts, loader: dynamicImport, singleImport: false });

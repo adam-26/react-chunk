@@ -44,17 +44,17 @@ function MapImport({ chunk, ...rest }) {
   const { isLoading, hasLoaded, error, importKeys } = chunkState;
 
   if (isLoading || error) {
-      return <div>MyLoadingComponent {JSON.stringify(chunkState)}</div>;
+    return <div>MyLoadingComponent {JSON.stringify(chunkState)}</div>;
   }
 
   if (hasLoaded) {
-      return (
-        <React.Fragment>
-          {importKeys.map((key, idx) => {
-            return React.createElement(lookupMapComponent(key, imported), { ...rest, key: idx })
-          })}
-        </React.Fragment>
-      );
+    return (
+      <React.Fragment>
+        {importKeys.map((key, idx) => {
+          return React.createElement(lookupMapComponent(key, imported), { ...rest, key: idx })
+        })}
+      </React.Fragment>
+    );
   }
 
   return null;
@@ -104,8 +104,8 @@ describe('chunk', () => {
 
   test('delay and timeout', async () => {
     let ChunkMyComponent = chunk(createLoader(300, () => MyComponent), {
-        delay: 100,
-        timeout: 200,
+      delay: 100,
+      timeout: 200,
     })(SingleImport);
 
     let component1 = renderer.create(<ChunkMyComponent prop="foo" />);
@@ -178,7 +178,7 @@ describe('chunk', () => {
     expect(component1.toJSON()).toMatchSnapshot(); // second retry - loading
     await waitFor(400);
     expect(component1.toJSON()).toMatchSnapshot(); // timedOut (after all retry attempts)
-    await waitFor(400);
+    await waitFor(500);
     expect(component1.toJSON()).toMatchSnapshot(); // loaded
   });
 
@@ -275,7 +275,7 @@ describe('chunk', () => {
 
   test('resolveDefaultImport with no wrapped component', async () => {
     let ChunkMyComponent = chunk(createLoader(400, () => ({ MyComponent })), {
-        resolveDefaultImport: imported => imported.MyComponent
+      resolveDefaultImport: imported => imported.MyComponent
     })();
 
     let component = renderer.create(<ChunkMyComponent prop="foo" />);
@@ -299,11 +299,11 @@ describe('chunk', () => {
     expect(component.toJSON()).toMatchSnapshot(); // success
   });
 
-  describe('opts.hoist: true', () => {
+  describe('opts.hoistStatics: true', () => {
     test('applies statics in render lifecycle', async () => {
       const jestFn = jest.fn();
       MyComponent.myStatic = jestFn;
-      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
 
       renderer.create(<ChunkMyComponent prop="foo" />);
       expect(ChunkMyComponent.myStatic).toBeUndefined(); // initial
@@ -317,7 +317,7 @@ describe('chunk', () => {
     test('applies statics when preloaded on server', async () => {
       const jestFn = jest.fn();
       MyComponent.myStatic = jestFn;
-      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
 
       await preloadAll();
 
@@ -327,7 +327,7 @@ describe('chunk', () => {
 
     test('does not apply statics on error', async () => {
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error(); }), {
-        hoist: true
+        hoistStatics: true
       })();
 
       renderer.create(<ChunkMyComponent prop="foo" />);
@@ -340,8 +340,9 @@ describe('chunk', () => {
     });
 
     test('throws on server `preloadAll()` when import is invalid', async () => {
+      // eslint-disable-next-line no-unused-vars
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
-        hoist: true
+        hoistStatics: true
       })();
 
       expect.assertions(1);
@@ -354,7 +355,7 @@ describe('chunk', () => {
 
     test('throws on `preloadChunks()` when import is invalid', async () => {
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
-        hoist: true
+        hoistStatics: true
       })();
 
       expect.assertions(1);
@@ -367,7 +368,7 @@ describe('chunk', () => {
 
     test('throws on static `preload()`', async () => {
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
-        hoist: true
+        hoistStatics: true
       })();
 
       expect.assertions(1);
@@ -381,7 +382,7 @@ describe('chunk', () => {
     test('`preloadChunks()` hoists statics before render', async () => {
       const jestFn = jest.fn();
       MyComponent.myStatic = jestFn;
-      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoist: true })();
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
 
       await preloadChunks([ChunkMyComponent.getChunkLoader()]);
 
@@ -400,8 +401,8 @@ describe('chunks', () => {
     expect(() => chunks(createLoader(400, () => MyComponent))).toThrow();
   });
 
-  test('using hoist option throws', async () => {
-      expect(() => chunks({ a: createLoader(400, () => MyComponent)}, { hoist: true })).toThrow();
+  test('using hoistStatics option throws', async () => {
+    expect(() => chunks({ a: createLoader(400, () => MyComponent)}, { hoistStatics: true })).toThrow();
   });
 
   test('loads multiple imports', async () => {
@@ -470,7 +471,7 @@ describe('preloadReady', () => {
 
   test('one', async () => {
     let ChunkMyComponent = chunk(createLoader(200, () => MyComponent), {
-        webpack: () => [1]
+      webpack: () => [1]
     })(SingleImport);
 
     await preloadReady();
@@ -515,12 +516,12 @@ describe('preloadReady', () => {
     expect(loadingComponent.toJSON()).toMatchSnapshot(); // loading
   });
 
-  describe('hoist: true', function () {
+  describe('hoistStatics: true', function () {
     test('applies statics when pre-loaded on client', async () => {
       const jestFn = jest.fn();
       MyComponent.myStatic = jestFn;
       let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), {
-        hoist: true,
+        hoistStatics: true,
         webpack: () => [1, 2]
       })();
 
@@ -531,8 +532,9 @@ describe('preloadReady', () => {
     });
 
     test('throws on client `preloadReady()` when import is invalid', async () => {
+      // eslint-disable-next-line no-unused-vars
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error('import err'); }), {
-        hoist: true,
+        hoistStatics: true,
         webpack: () => [1, 2]
       })();
 
@@ -547,16 +549,16 @@ describe('preloadReady', () => {
 });
 
 test('preloadChunks', async () => {
-    let LoadableMyComponent = chunk(createLoader(300, () => MyComponent))(SingleImport);
-    let LoadableMapComponent = chunks({ MyComponent: createLoader(300, () => MyComponent) })(MapImport);
+  let LoadableMyComponent = chunk(createLoader(300, () => MyComponent))(SingleImport);
+  let LoadableMapComponent = chunks({ MyComponent: createLoader(300, () => MyComponent) })(MapImport);
 
-    const loaders = [LoadableMyComponent.getChunkLoader(), LoadableMapComponent.getChunkLoader()];
+  const loaders = [LoadableMyComponent.getChunkLoader(), LoadableMapComponent.getChunkLoader()];
 
-    await preloadChunks(loaders);
+  await preloadChunks(loaders);
 
-    let chunkComponent = renderer.create(<LoadableMyComponent prop="baz" />);
-    let chunksComponent = renderer.create(<LoadableMapComponent prop="foo" />);
+  let chunkComponent = renderer.create(<LoadableMyComponent prop="baz" />);
+  let chunksComponent = renderer.create(<LoadableMapComponent prop="foo" />);
 
-    expect(chunkComponent.toJSON()).toMatchSnapshot();
-    expect(chunksComponent.toJSON()).toMatchSnapshot();
+  expect(chunkComponent.toJSON()).toMatchSnapshot();
+  expect(chunksComponent.toJSON()).toMatchSnapshot();
 });
