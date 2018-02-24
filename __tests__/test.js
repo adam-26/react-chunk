@@ -435,7 +435,7 @@ describe('chunks', () => {
 
   test('resolveDefaultImport', async () => {
     let ChunkMyComponent = chunks({
-      a: createLoader(200, () => ({ aComponent: MyComponent })),
+      a: createLoader(300, () => ({ aComponent: MyComponent })),
       b: createLoader(400, () => ({ bComponent: MyComponent })),
     }, {
       resolveDefaultImport: (imported, key) => imported[key + 'Component']
@@ -445,7 +445,7 @@ describe('chunks', () => {
     expect(component.toJSON()).toMatchSnapshot(); // initial
     await waitFor(200);
     expect(component.toJSON()).toMatchSnapshot(); // loading
-    await waitFor(200);
+    await waitFor(300);
     expect(component.toJSON()).toMatchSnapshot(); // success
   });
 });
