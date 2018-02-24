@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.0.2"></a>
+## [7.0.2](https://github.com/adam-26/react-chunk/compare/v7.0.1...v7.0.2) (2018-02-24)
+
+
+### Bug Fixes
+
+* **build:** test timing bug ([7ccb659](https://github.com/adam-26/react-chunk/commit/7ccb659))
+* **build:** test timing bug ([#9](https://github.com/adam-26/react-chunk/issues/9)) ([e040c7a](https://github.com/adam-26/react-chunk/commit/e040c7a))
+* **release:** Add missing export ([02f26c2](https://github.com/adam-26/react-chunk/commit/02f26c2))
+* **release:** Add missing export ([#8](https://github.com/adam-26/react-chunk/issues/8)) ([a848541](https://github.com/adam-26/react-chunk/commit/a848541))
+
+
+
 <a name="7.0.1"></a>
 ## [7.0.1](https://github.com/adam-26/react-chunk/compare/v7.0.0...v7.0.1) (2018-02-24)
 
