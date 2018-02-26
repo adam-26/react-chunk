@@ -9,6 +9,7 @@
   "files": [
     "babel.js",
     "webpack.js",
+    "Recorder.js",
     "lib/**"
   ],
   "scripts": {
