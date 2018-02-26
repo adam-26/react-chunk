@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.0.3"></a>
+## [7.0.3](https://github.com/adam-26/react-chunk/compare/v7.0.2...v7.0.3) (2018-02-26)
+
+
+### Bug Fixes
+
+* **release:** Missing file ([3a18700](https://github.com/adam-26/react-chunk/commit/3a18700))
+* **release:** Missing file ([#10](https://github.com/adam-26/react-chunk/issues/10)) ([f425426](https://github.com/adam-26/react-chunk/commit/f425426))
+
+
+
 <a name="7.0.2"></a>
 ## [7.0.2](https://github.com/adam-26/react-chunk/compare/v7.0.1...v7.0.2) (2018-02-24)
 
