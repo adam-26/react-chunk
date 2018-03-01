@@ -763,7 +763,7 @@ Note: this requires `hoistStatics: true`
 ```js
 const ChunkComponent = chunk({...});
 
-ChunkComponent.hoistOnInit(() => MyParentHOC);
+ChunkComponent.hoistOnInit((ImportedComponent) => { /* use ImportedComponent */ });
 ```
 
 ### `WrappedComponent`
