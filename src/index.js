@@ -409,6 +409,9 @@ function createChunkComponent(loadFn, options) {
         res.promise = res.promise
           .then(() => { hoistStatics(); })
           .catch(err => {
+            // on error, clear hoist subscriptions
+            dynamicHoistComponentGetters.splice(0, dynamicHoistComponentGetters.length);
+
             if (throwOnImportError === true) {
               // When pre-loading, any loader errors will be thrown immediately (ie: hoistStatics, timeout options)
               // - hoisting implies use of static methods, which need to be available prior to rendering.
