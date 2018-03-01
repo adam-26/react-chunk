@@ -218,15 +218,23 @@ function createChunkComponent(loadFn, options) {
 
         if (!opts.hoistStatics) {
           // nothing to hoist
-          return;
+          return noop;
         }
 
         if (res && res.loaded) {
           hoistNonActionStatics(getTargetComponent(), opts.resolveDefaultImport(res.loaded));
-          return;
+          return noop;
         }
 
         dynamicHoistComponentGetters.push(getTargetComponent);
+
+        // Return an unsubscribe function
+        return () => {
+          const idx = dynamicHoistComponentGetters.indexOf(getTargetComponent);
+          if (idx !== -1) {
+            dynamicHoistComponentGetters.splice(idx, 1);
+          }
+        };
       }
 
       _loadChunks() {
