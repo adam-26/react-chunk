@@ -3,6 +3,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const hoistNonReactStatics = require('hoist-non-react-statics');
 const getDisplayName = require('react-display-name').default;
+const invariant = require('invariant');
 
 const ALL_INITIALIZERS = [];
 const READY_INITIALIZERS = [];
@@ -142,6 +143,19 @@ function resolve(obj) {
   return obj && obj.__esModule ? obj.default : obj;
 }
 
+function hoistNonActionStatics(targetComponent, sourceComponent) {
+  hoistNonReactStatics(targetComponent, sourceComponent, {
+    // prevent hoisting the following static methods
+    getDispatcherActions: true,
+    getDispatchParamToProps: true,
+    getDispatchParamsToProps: true,
+    WrappedComponent: true,
+    preloadChunk: true,
+    getChunkLoader: true,
+    hoistOnInit: true
+  });
+}
+
 function createChunkComponent(loadFn, options) {
   let opts = Object.assign({
     displayName: null,
@@ -156,6 +170,7 @@ function createChunkComponent(loadFn, options) {
   }, options);
 
   let res = null;
+  const dynamicHoistComponentGetters = [];
   let importTimeoutMs = typeof opts.timeout === 'number' ? opts.timeout : 0;
 
   // Adjust the UI timeout to include the retry backOff options
@@ -196,6 +211,22 @@ function createChunkComponent(loadFn, options) {
 
       static getChunkLoader() {
         return init;
+      }
+
+      static hoistOnInit(getTargetComponent) {
+        invariant(typeof getTargetComponent === 'function', `"hoistOnInit" expects a single function argument.`);
+
+        if (!opts.hoistStatics) {
+          // nothing to hoist
+          return;
+        }
+
+        if (res && res.loaded) {
+          hoistNonActionStatics(getTargetComponent(), opts.resolveDefaultImport(res.loaded));
+          return;
+        }
+
+        dynamicHoistComponentGetters.push(getTargetComponent);
       }
 
       _loadChunks() {
@@ -384,6 +415,15 @@ function createChunkComponent(loadFn, options) {
               throw err;
             }
           });
+      }
+
+      if (opts.hoistStatics && dynamicHoistComponentGetters.length !== 0) {
+        res.promise = res.promise.then(function () {
+          const hoistComponentGetters = dynamicHoistComponentGetters.splice(0, dynamicHoistComponentGetters.length);
+          hoistComponentGetters.forEach(getHoistComponent => {
+            hoistNonActionStatics(getHoistComponent(), opts.resolveDefaultImport(res.loaded));
+          });
+        });
       }
 
       return res.promise;

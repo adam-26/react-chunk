@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "hoist-non-react-statics": "^2.5.0",
+    "invariant": "^2.2.3",
     "prop-types": "^15.5.0",
     "react-display-name": "^0.2.3"
   },

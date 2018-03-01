@@ -754,6 +754,17 @@ const ChunkComponent = chunk({...});
 ChunkComponent.getChunkLoader();
 ```
 
+#### `hoistOnInit(getComponent: () => node): void`
+
+This is a static method that can be used to subscribe components to which statics will be hoisted on initialization.
+
+Note: this requires `hoistStatics: true`
+
+```js
+const ChunkComponent = chunk({...});
+
+ChunkComponent.hoistOnInit(() => MyParentHOC);
+```
 
 ### `WrappedComponent`
 

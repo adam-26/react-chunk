@@ -325,6 +325,20 @@ describe('chunk', () => {
       delete MyComponent.myStatic;
     });
 
+    test('hoists statics on init', async () => {
+      function HOC() {}
+
+      const jestFn = jest.fn();
+      MyComponent.myStatic = jestFn;
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
+      ChunkMyComponent.hoistOnInit(() => HOC);
+
+      await preloadAll();
+
+      expect(HOC.myStatic).toBe(jestFn);
+      delete MyComponent.myStatic;
+    });
+
     test('does not apply statics on error', async () => {
       let ChunkMyComponent = chunk(createLoader(400, () => { throw new Error(); }), {
         hoistStatics: true
