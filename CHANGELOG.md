@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.1.1"></a>
+## [7.1.1](https://github.com/adam-26/react-chunk/compare/v7.1.0...v7.1.1) (2018-03-01)
+
+
+### Bug Fixes
+
+* **code:** Clear subscribers ([fd26dd4](https://github.com/adam-26/react-chunk/commit/fd26dd4))
+* **code:** hoistOnInit ([c5b6c28](https://github.com/adam-26/react-chunk/commit/c5b6c28))
+* **code:** hoistOnInit cleanup ([#12](https://github.com/adam-26/react-chunk/issues/12)) ([5842970](https://github.com/adam-26/react-chunk/commit/5842970))
+
+
+
 <a name="7.1.0"></a>
 # [7.1.0](https://github.com/adam-26/react-chunk/compare/v7.0.3...v7.1.0) (2018-03-01)
 
