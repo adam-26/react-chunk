@@ -158,6 +158,7 @@ function createChunkComponent(loadFn, options) {
 
   let res = null;
   const hoistSubscribers = [];
+  const importedSubscribers = [];
   let importTimeoutMs = typeof opts.timeout === 'number' ? opts.timeout : 0;
 
   // Adjust the UI timeout to include the retry backOff options
@@ -200,20 +201,37 @@ function createChunkComponent(loadFn, options) {
         return init;
       }
 
-      static hoistOnInit(hoistSubscriber) {
-        invariant(typeof hoistSubscriber === 'function', `"hoistOnInit" expects a single function argument.`);
+      static onImported(importedHandler) {
+        invariant(typeof importedHandler === 'function', `"onImported" expects a single function argument.`);
+        return ChunkComponent.bindImportSubscriber(importedHandler, importedSubscribers);
+      }
+
+      static onImportedWithHoist(hoistSubscriber) {
+        invariant(typeof hoistSubscriber === 'function', `"onHoistImported" expects a single function argument.`);
 
         if (!opts.hoistStatics) {
           // nothing to hoist
           return;
         }
 
+        return ChunkComponent.bindImportSubscriber(hoistSubscriber, hoistSubscribers);
+      }
+
+      static bindImportSubscriber(handler, subscribers) {
         if (res && res.loaded) {
-          hoistSubscriber(opts.resolveDefaultImport(res.loaded));
+          handler(opts.resolveDefaultImport(res.loaded));
           return;
         }
 
-        hoistSubscribers.push(hoistSubscriber);
+        subscribers.push(handler);
+
+        // return an unsubscribe function
+        return () => {
+          const idx = subscribers.indexOf(handler);
+          if (idx !== -1) {
+            return subscribers.splice(idx, 1);
+          }
+        };
       }
 
       _loadChunks() {
@@ -390,30 +408,46 @@ function createChunkComponent(loadFn, options) {
           importTimeoutMs: importTimeoutMs,
           throwOnImportError: throwOnImportError
         });
-      }
 
-      if (opts.hoistStatics) {
-        res.promise = res.promise
-          .then(() => { hoistStatics(); })
-          .catch(err => {
-            // clear any subscribers on error
-            hoistSubscribers.splice(0, hoistSubscribers.length);
+        if (opts.hoistStatics) {
+          res.promise = res.promise
+            .then(() => { hoistStatics(); })
+            .catch(err => {
+              // clear any subscribers on error
+              if (hoistSubscribers.length !== 0) {
+                hoistSubscribers.splice(0, hoistSubscribers.length);
+              }
 
-            if (throwOnImportError === true) {
-              // When pre-loading, any loader errors will be thrown immediately (ie: hoistStatics, timeout options)
-              // - hoisting implies use of static methods, which need to be available prior to rendering.
-              throw err;
-            }
-          });
+              if (importedSubscribers.length !== 0) {
+                importedSubscribers.splice(0, importedSubscribers.length);
+              }
 
-        if (hoistSubscribers.length !== 0) {
-          res.promise = res.promise.then(function () {
-            const subscriberHandlers = hoistSubscribers.splice(0, hoistSubscribers.length);
+              if (throwOnImportError === true) {
+                // When pre-loading, any loader errors will be thrown immediately (ie: hoistStatics, timeout options)
+                // - hoisting implies use of static methods, which need to be available prior to rendering.
+                throw err;
+              }
+            })
+            .then(() => {
+              // Notify hoist subscribers
+              if (hoistSubscribers.length !== 0) {
+                const subscriberHandlers = hoistSubscribers.splice(0, hoistSubscribers.length);
+                subscriberHandlers.forEach(subscribeHandler => {
+                  subscribeHandler(opts.resolveDefaultImport(res.loaded));
+                });
+              }
+            });
+        }
+
+        // Notify 'onImported' subscribers
+        res.promise = res.promise.then(function () {
+          if (importedSubscribers.length !== 0) {
+            const subscriberHandlers = importedSubscribers.splice(0, importedSubscribers.length);
             subscriberHandlers.forEach(subscribeHandler => {
               subscribeHandler(opts.resolveDefaultImport(res.loaded));
             });
-          });
-        }
+          }
+        });
       }
 
       return res.promise;

@@ -77,6 +77,27 @@ exports[`chunk loading success 4`] = `
 </div>
 `;
 
+exports[`chunk opts.hoistStatics: true preloadChunk 1`] = `
+<div>
+  MyLoadingComponent 
+  {"isLoading":true,"hasLoaded":false,"pastDelay":false,"timedOut":false,"error":null,"loaded":null,"importKeys":[]}
+</div>
+`;
+
+exports[`chunk opts.hoistStatics: true preloadChunk 2`] = `
+<div>
+  MyComponent 
+  {"prop":"bar"}
+</div>
+`;
+
+exports[`chunk opts.hoistStatics: true preloadChunk 3`] = `
+<div>
+  MyComponent 
+  {"prop":"baz"}
+</div>
+`;
+
 exports[`chunk preloadChunk 1`] = `
 <div>
   MyLoadingComponent 

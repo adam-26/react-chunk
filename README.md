@@ -754,16 +754,30 @@ const ChunkComponent = chunk({...});
 ChunkComponent.getChunkLoader();
 ```
 
-#### `hoistOnInit(getComponent: () => node): void`
+#### `onImported(subscriber: (ImportedComponent) => void): () => void`
 
-This is a static method that can be used to subscribe components to which statics will be hoisted on initialization.
+This is a static method that can be used to subscribe for notifications when component has been imported.
 
-Note: this requires `hoistStatics: true`
+Returns an `unsubscribe` function.
 
 ```js
 const ChunkComponent = chunk({...});
 
-ChunkComponent.hoistOnInit((ImportedComponent) => { /* use ImportedComponent */ });
+ChunkComponent.onImported((ImportedComponent) => { /* use ImportedComponent */ });
+```
+
+#### `onImportedWithHoist(subscriber: (ImportedComponent) => void): () => void`
+
+This is a static method that can be used to subscribe for notifications when component has been imported where `hoistStatics: true`.
+
+Note: this requires `hoistStatics: true`
+
+Returns an `unsubscribe` function.
+
+```js
+const ChunkComponent = chunk({...});
+
+ChunkComponent.onImportedWithHoist((ImportedComponent) => { /* use ImportedComponent */ });
 ```
 
 ### `WrappedComponent`
