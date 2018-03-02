@@ -143,19 +143,6 @@ function resolve(obj) {
   return obj && obj.__esModule ? obj.default : obj;
 }
 
-function hoistNonActionStatics(targetComponent, sourceComponent) {
-  hoistNonReactStatics(targetComponent, sourceComponent, {
-    // prevent hoisting the following static methods
-    getDispatcherActions: true,
-    getDispatchParamToProps: true,
-    getDispatchParamsToProps: true,
-    WrappedComponent: true,
-    preloadChunk: true,
-    getChunkLoader: true,
-    hoistOnInit: true
-  });
-}
-
 function createChunkComponent(loadFn, options) {
   let opts = Object.assign({
     displayName: null,
@@ -170,7 +157,7 @@ function createChunkComponent(loadFn, options) {
   }, options);
 
   let res = null;
-  const dynamicHoistComponentGetters = [];
+  const hoistSubscribers = [];
   let importTimeoutMs = typeof opts.timeout === 'number' ? opts.timeout : 0;
 
   // Adjust the UI timeout to include the retry backOff options
@@ -213,28 +200,20 @@ function createChunkComponent(loadFn, options) {
         return init;
       }
 
-      static hoistOnInit(getTargetComponent) {
-        invariant(typeof getTargetComponent === 'function', `"hoistOnInit" expects a single function argument.`);
+      static hoistOnInit(hoistSubscriber) {
+        invariant(typeof hoistSubscriber === 'function', `"hoistOnInit" expects a single function argument.`);
 
         if (!opts.hoistStatics) {
           // nothing to hoist
-          return noop;
+          return;
         }
 
         if (res && res.loaded) {
-          hoistNonActionStatics(getTargetComponent(), opts.resolveDefaultImport(res.loaded));
-          return noop;
+          hoistSubscriber(opts.resolveDefaultImport(res.loaded));
+          return;
         }
 
-        dynamicHoistComponentGetters.push(getTargetComponent);
-
-        // Return an unsubscribe function
-        return () => {
-          const idx = dynamicHoistComponentGetters.indexOf(getTargetComponent);
-          if (idx !== -1) {
-            dynamicHoistComponentGetters.splice(idx, 1);
-          }
-        };
+        hoistSubscribers.push(hoistSubscriber);
       }
 
       _loadChunks() {
@@ -417,8 +396,8 @@ function createChunkComponent(loadFn, options) {
         res.promise = res.promise
           .then(() => { hoistStatics(); })
           .catch(err => {
-            // on error, clear hoist subscriptions
-            dynamicHoistComponentGetters.splice(0, dynamicHoistComponentGetters.length);
+            // clear any subscribers on error
+            hoistSubscribers.splice(0, hoistSubscribers.length);
 
             if (throwOnImportError === true) {
               // When pre-loading, any loader errors will be thrown immediately (ie: hoistStatics, timeout options)
@@ -426,15 +405,15 @@ function createChunkComponent(loadFn, options) {
               throw err;
             }
           });
-      }
 
-      if (opts.hoistStatics && dynamicHoistComponentGetters.length !== 0) {
-        res.promise = res.promise.then(function () {
-          const hoistComponentGetters = dynamicHoistComponentGetters.splice(0, dynamicHoistComponentGetters.length);
-          hoistComponentGetters.forEach(getHoistComponent => {
-            hoistNonActionStatics(getHoistComponent(), opts.resolveDefaultImport(res.loaded));
+        if (hoistSubscribers.length !== 0) {
+          res.promise = res.promise.then(function () {
+            const subscriberHandlers = hoistSubscribers.splice(0, hoistSubscribers.length);
+            subscriberHandlers.forEach(subscribeHandler => {
+              subscribeHandler(opts.resolveDefaultImport(res.loaded));
+            });
           });
-        });
+        }
       }
 
       return res.promise;
