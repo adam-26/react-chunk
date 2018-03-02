@@ -246,6 +246,15 @@ describe('chunk', () => {
     expect(component.toJSON()).toMatchSnapshot(); // serverside
   });
 
+  test('onImported', async (done) => {
+    let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))();
+    ChunkMyComponent.onImported((Imported) => {
+      expect(Imported).toBe(MyComponent);
+      done();
+    });
+    await preloadAll();
+  });
+
   test('preloadChunk', async () => {
     let ChunkMyComponent = chunk(createLoader(400, () => MyComponent))(SingleImport);
 
@@ -325,14 +334,39 @@ describe('chunk', () => {
       delete MyComponent.myStatic;
     });
 
-    test('hoists statics on init', async (done) => {
+    test('onImported', async (done) => {
       let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
-      ChunkMyComponent.hoistOnInit((Imported) => {
+      ChunkMyComponent.onImported((Imported) => {
+        expect(Imported).toBe(MyComponent);
+        done();
+      });
+      await preloadAll();
+    });
+
+    test('onImportedWithHoist', async (done) => {
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })();
+      ChunkMyComponent.onImportedWithHoist((Imported) => {
         expect(Imported).toBe(MyComponent);
         done();
       });
 
       await preloadAll();
+    });
+
+    test('preloadChunk', async () => {
+      let ChunkMyComponent = chunk(createLoader(400, () => MyComponent), { hoistStatics: true })(SingleImport);
+
+      let promise = ChunkMyComponent.preloadChunk();
+      await waitFor(200);
+
+      let component1 = renderer.create(<ChunkMyComponent prop="bar" />);
+
+      expect(component1.toJSON()).toMatchSnapshot(); // still loading...
+      await promise;
+      expect(component1.toJSON()).toMatchSnapshot(); // success
+
+      let component2 = renderer.create(<ChunkMyComponent prop="baz" />);
+      expect(component2.toJSON()).toMatchSnapshot(); // success
     });
 
     test('does not apply statics on error', async () => {
