@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.2.0"></a>
+# [7.2.0](https://github.com/adam-26/react-chunk/compare/v7.1.1...v7.2.0) (2018-03-02)
+
+
+### Bug Fixes
+
+* **tests:** Breaking hoist subscriber test ([c83d99a](https://github.com/adam-26/react-chunk/commit/c83d99a))
+
+
+### Features
+
+* **api:** subscribe to hoist ([88568c4](https://github.com/adam-26/react-chunk/commit/88568c4))
+* **api:** subscribe to hoist ([#13](https://github.com/adam-26/react-chunk/issues/13)) ([548dd26](https://github.com/adam-26/react-chunk/commit/548dd26))
+
+
+
 <a name="7.1.1"></a>
 ## [7.1.1](https://github.com/adam-26/react-chunk/compare/v7.1.0...v7.1.1) (2018-03-01)
 
