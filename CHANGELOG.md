@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="7.3.0"></a>
+# [7.3.0](https://github.com/adam-26/react-chunk/compare/v7.2.0...v7.3.0) (2018-03-02)
+
+
+### Features
+
+* **api:** event notification ([6296565](https://github.com/adam-26/react-chunk/commit/6296565))
+* **api:** event notification ([#14](https://github.com/adam-26/react-chunk/issues/14)) ([6b34475](https://github.com/adam-26/react-chunk/commit/6b34475))
+
+
+
 <a name="7.2.0"></a>
 # [7.2.0](https://github.com/adam-26/react-chunk/compare/v7.1.1...v7.2.0) (2018-03-02)
 
